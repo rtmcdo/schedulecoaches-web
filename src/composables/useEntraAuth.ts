@@ -32,17 +32,30 @@ async function initializeMsal(): Promise<PublicClientApplication> {
     return msalInstance
   }
 
+  const tenantId = import.meta.env.VITE_ENTRA_TENANT_ID
   const tenantSubdomain = import.meta.env.VITE_ENTRA_TENANT_SUBDOMAIN
   const clientId = import.meta.env.VITE_ENTRA_CLIENT_ID
 
-  if (!tenantSubdomain || !clientId) {
-    throw new Error('Entra ID configuration missing. Please set VITE_ENTRA_TENANT_SUBDOMAIN and VITE_ENTRA_CLIENT_ID')
+  if (!clientId) {
+    throw new Error('Entra ID configuration missing. Please set VITE_ENTRA_CLIENT_ID')
+  }
+
+  // Determine authority URL based on available configuration
+  // External ID (CIAM) format: https://{subdomain}.ciamlogin.com/{tenantName}
+  let authority: string
+  if (tenantSubdomain) {
+    authority = `https://${tenantSubdomain}.ciamlogin.com/${tenantSubdomain}.onmicrosoft.com`
+  } else if (tenantId) {
+    // Fallback to standard Azure AD format
+    authority = `https://login.microsoftonline.com/${tenantId}/`
+  } else {
+    throw new Error('Either VITE_ENTRA_TENANT_ID or VITE_ENTRA_TENANT_SUBDOMAIN must be set')
   }
 
   const msalConfig: Configuration = {
     auth: {
       clientId,
-      authority: `https://${tenantSubdomain}.ciamlogin.com/${tenantSubdomain}.onmicrosoft.com`,
+      authority,
       redirectUri: window.location.origin + '/auth/callback',
       postLogoutRedirectUri: window.location.origin,
       navigateToLoginRequestUrl: false
@@ -52,6 +65,8 @@ async function initializeMsal(): Promise<PublicClientApplication> {
       storeAuthStateInCookie: false
     }
   }
+
+  console.log('[Entra Auth] Initializing MSAL with authority:', authority)
 
   msalInstance = new PublicClientApplication(msalConfig)
   await msalInstance.initialize()
