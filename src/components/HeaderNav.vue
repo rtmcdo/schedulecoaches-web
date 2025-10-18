@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 
 const route = useRoute()
 const mobileMenuOpen = ref(false)
+const sportsDropdownOpen = ref(false)
 const isScrolled = ref(false)
 
 const handleScroll = () => {
@@ -24,6 +25,11 @@ const toggleMobileMenu = () => {
 
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false
+  sportsDropdownOpen.value = false
+}
+
+const toggleSportsDropdown = () => {
+  sportsDropdownOpen.value = !sportsDropdownOpen.value
 }
 </script>
 
@@ -41,7 +47,7 @@ const closeMobileMenu = () => {
       </RouterLink>
 
       <!-- Desktop Menu -->
-      <ul class="hidden md:flex space-x-6">
+      <ul class="hidden md:flex space-x-6 items-center">
         <li>
           <RouterLink
             to="/"
@@ -50,13 +56,45 @@ const closeMobileMenu = () => {
             Home
           </RouterLink>
         </li>
-        <li>
-          <RouterLink
-            to="/pickleball-coach"
-            class="text-gray-700 hover:text-primary-600 transition-colors font-medium"
+        <li class="relative">
+          <button
+            @click="toggleSportsDropdown"
+            class="text-gray-700 hover:text-primary-600 transition-colors font-medium flex items-center gap-1"
           >
-            Pickleball Coach
-          </RouterLink>
+            Sports
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <!-- Dropdown Menu -->
+          <Transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="transform opacity-0 scale-95"
+            enter-to-class="transform opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="transform opacity-100 scale-100"
+            leave-to-class="transform opacity-0 scale-95"
+          >
+            <div
+              v-if="sportsDropdownOpen"
+              class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
+            >
+              <RouterLink
+                to="/pickleball-coach"
+                @click="sportsDropdownOpen = false"
+                class="block px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+              >
+                Pickleball
+              </RouterLink>
+              <RouterLink
+                to="/tennis-coach"
+                @click="sportsDropdownOpen = false"
+                class="block px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+              >
+                Tennis
+              </RouterLink>
+            </div>
+          </Transition>
         </li>
         <li>
           <RouterLink
@@ -149,13 +187,33 @@ const closeMobileMenu = () => {
             </RouterLink>
           </li>
           <li>
-            <RouterLink
-              to="/pickleball-coach"
-              @click="closeMobileMenu"
-              class="text-gray-700 hover:text-primary-600 block transition-colors"
-            >
-              Pickleball Coach
-            </RouterLink>
+            <div class="space-y-2">
+              <button
+                @click="toggleSportsDropdown"
+                class="text-gray-700 hover:text-primary-600 transition-colors font-medium flex items-center justify-between w-full"
+              >
+                Sports
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" :class="{ 'rotate-180': sportsDropdownOpen }">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div v-if="sportsDropdownOpen" class="pl-4 space-y-2">
+                <RouterLink
+                  to="/pickleball-coach"
+                  @click="closeMobileMenu"
+                  class="text-gray-700 hover:text-primary-600 block transition-colors"
+                >
+                  Pickleball
+                </RouterLink>
+                <RouterLink
+                  to="/tennis-coach"
+                  @click="closeMobileMenu"
+                  class="text-gray-700 hover:text-primary-600 block transition-colors"
+                >
+                  Tennis
+                </RouterLink>
+              </div>
+            </div>
           </li>
           <li>
             <RouterLink

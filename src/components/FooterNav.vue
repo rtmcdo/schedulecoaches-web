@@ -15,7 +15,7 @@ const currentYear = new Date().getFullYear()
           </h3>
         </RouterLink>
         <p class="mt-3.5 text-gray-600">
-          Professional coaching business management for Pickleball and Tennis coaches
+          Professional coaching business management for sport coaches
         </p>
       </div>
 
