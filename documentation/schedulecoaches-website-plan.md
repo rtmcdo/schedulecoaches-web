@@ -82,16 +82,20 @@ Reference pbweb structure but adapt for Vue:
 - [x] Create `App.vue` with global layout structure
 - [x] Build `HeaderNav.vue` component
   - [x] Text-based logo "ScheduleCoaches" (left side)
-  - [x] Navigation links: Home, Pickleball Coach, FAQ, Contact
+  - [x] Navigation with Sports dropdown menu (Pickleball, Tennis)
+  - [x] Additional links: Home, FAQ, Contact
   - [x] "Buy Now" CTA button (right side, prominent)
-  - [x] Mobile hamburger menu with slide-out drawer
+  - [x] Mobile hamburger menu with expandable Sports section
+  - [x] Smooth transitions and hover effects
 - [x] Build `FooterNav.vue` component
   - [x] Links to Privacy Policy, Terms of Service, Contact
   - [x] Social media icons (Facebook, Instagram)
   - [x] Copyright notice (JRM Software LLC)
-- [x] Vue Router routes implemented (completed in Phase 1):
+  - [x] Tagline: "Professional coaching business management for sport coaches"
+- [x] Vue Router routes implemented (completed in Phase 1, expanded in Phase 2):
   - [x] `/` - Home
   - [x] `/pickleball-coach` - Pickleball Coach detail page
+  - [x] `/tennis-coach` - Tennis Coach detail page (placeholder)
   - [x] `/faq` - FAQ page
   - [x] `/contact` - Contact/Support page
   - [x] `/privacy-policy` - Privacy Policy
@@ -100,11 +104,19 @@ Reference pbweb structure but adapt for Vue:
 - [x] Implement responsive breakpoints matching pbjournal
 
 ### Acceptance Criteria
-- Header sticky on scroll with subtle shadow
-- Navigation works on desktop and mobile (hamburger menu)
-- All routes render without errors
-- Footer displays correctly on all pages
-- Responsive design tested on mobile, tablet, desktop
+- ✅ Header sticky on scroll with subtle shadow
+- ✅ Navigation works on desktop and mobile (hamburger menu)
+- ✅ Sports dropdown menu functions properly on both desktop and mobile
+- ✅ All routes render without errors
+- ✅ Footer displays correctly on all pages
+- ✅ Responsive design tested on mobile, tablet, desktop
+
+### Implementation Notes
+- Sports dropdown implemented with Vue transitions for smooth animations
+- Desktop: Click-to-open dropdown with Pickleball and Tennis options
+- Mobile: Expandable section with chevron icon rotation
+- Added `/tennis-coach` route for future Tennis Coach feature page
+- Dropdown state management ensures proper cleanup on navigation
 
 ### Notes
 ```
