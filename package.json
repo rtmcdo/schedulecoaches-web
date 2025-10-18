@@ -1,0 +1,43 @@
+{
+  "name": "schedulecoaches-web",
+  "version": "1.0.0",
+  "description": "ScheduleCoaches.com - Marketing website for Pickleball Coach and Tennis Coach apps",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rtmcdo/schedulecoaches-web.git"
+  },
+  "keywords": [
+    "pickleball",
+    "tennis",
+    "coaching",
+    "schedule",
+    "management"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rtmcdo/schedulecoaches-web/issues"
+  },
+  "homepage": "https://github.com/rtmcdo/schedulecoaches-web#readme",
+  "dependencies": {
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.8.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "vue-tsc": "^3.1.1"
+  }
+}
