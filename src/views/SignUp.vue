@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useEntraAuth } from '@/composables/useEntraAuth'
+
+const { signUpWithEmail, signUpWithGoogle, signUpWithApple } = useEntraAuth()
 
 const email = ref('')
-const isLoading = ref(false)
 const error = ref('')
+const isLoading = ref(false)
 
 const handleEmailSignUp = async () => {
   if (!email.value) {
@@ -22,44 +25,39 @@ const handleEmailSignUp = async () => {
   isLoading.value = true
 
   try {
-    // Call Stripe checkout with email pre-filled
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/create-checkout-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        lookup_key: 'pickleball_monthly',
-        customer_email: email.value
-      }),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to create checkout session')
-    }
-
-    // Redirect to Stripe Checkout
-    window.location.href = data.url
+    // This will:
+    // 1. Create Entra ID account (or sign in if exists)
+    // 2. Create user in our database via authMe endpoint
+    // 3. Redirect to Stripe checkout
+    await signUpWithEmail(email.value)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
     isLoading.value = false
   }
 }
 
-const handleGoogleSignUp = () => {
-  // TODO: Implement Google OAuth sign-up
-  console.log('Google sign-up clicked')
-  // For now, redirect to email sign-up
-  handleEmailSignUp()
+const handleGoogleSignUp = async () => {
+  error.value = ''
+  isLoading.value = true
+
+  try {
+    await signUpWithGoogle()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Google sign up failed. Please try again.'
+    isLoading.value = false
+  }
 }
 
-const handleAppleSignUp = () => {
-  // TODO: Implement Apple sign-up
-  console.log('Apple sign-up clicked')
-  // For now, redirect to email sign-up
-  handleEmailSignUp()
+const handleAppleSignUp = async () => {
+  error.value = ''
+  isLoading.value = true
+
+  try {
+    await signUpWithApple()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Apple sign up failed. Please try again.'
+    isLoading.value = false
+  }
 }
 </script>
 
