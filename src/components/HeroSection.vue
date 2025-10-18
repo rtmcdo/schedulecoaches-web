@@ -39,19 +39,21 @@ onMounted(() => {
             Manage Your Coaching Business
           </h1>
           <p class="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto">
-            Professional coaching management software for Pickleball and Tennis coaches.
+            Professional coaching management software for independent coaches.
             Schedule sessions, track clients, and grow your business.
           </p>
         </div>
       </Transition>
 
-      <!-- Sport Cards -->
+      <!-- Featured Applications -->
       <Transition
         enter-active-class="transition-all duration-1000 ease-out delay-300"
         enter-from-class="opacity-0 translate-y-8"
         enter-to-class="opacity-100 translate-y-0"
       >
-        <div v-if="isVisible" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div v-if="isVisible" class="max-w-5xl mx-auto">
+          <h2 class="text-3xl font-bold text-gray-900 text-center mb-8">Featured Applications</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <!-- Pickleball Coach Card -->
           <RouterLink
             to="/pickleball-coach"
@@ -59,7 +61,11 @@ onMounted(() => {
           >
             <div class="p-8">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-2xl font-bold text-gray-900">Pickleball Coach</h3>
+                <div class="flex items-center gap-3">
+                  <!-- Pickleball Icon -->
+                  <img src="/assets/noun-pickleball-6530092.png" alt="Pickleball" class="w-10 h-10 object-contain" />
+                  <h3 class="text-2xl font-bold text-gray-900">Pickleball Coach</h3>
+                </div>
                 <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center group-hover:bg-primary-200 transition-colors">
                   <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -105,13 +111,14 @@ onMounted(() => {
           <div class="relative bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200">
             <div class="p-8 opacity-75">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-2xl font-bold text-gray-900">Tennis Coach</h3>
-                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-semibold rounded-full">
-                  Coming Soon
-                </span>
+                <div class="flex items-center gap-3">
+                  <!-- Tennis Icon -->
+                  <img src="/assets/noun-tennis-8036207.svg" alt="Tennis" class="w-10 h-10 object-contain opacity-50" />
+                  <h3 class="text-2xl font-bold text-gray-900">Tennis Coach</h3>
+                </div>
               </div>
               <p class="text-gray-600 mb-6">
-                Professional coaching management built specifically for tennis coaches. All the same powerful features, tailored for tennis.
+                Professional coaching management software built specifically for tennis coaches. All the same powerful features, tailored for tennis.
               </p>
 
               <!-- Feature Highlights -->
@@ -135,10 +142,6 @@ onMounted(() => {
                   Revenue Tracking
                 </div>
               </div>
-
-              <div class="inline-flex items-center text-gray-500 font-semibold">
-                Launching Soon
-              </div>
             </div>
 
             <!-- Coming Soon Overlay Badge -->
@@ -147,6 +150,7 @@ onMounted(() => {
                 COMING SOON
               </div>
             </div>
+          </div>
           </div>
         </div>
       </Transition>
