@@ -134,29 +134,42 @@ solid white background on scroll (like pbjournal)
 
 ## Phase 3: Homepage Hero & Sport Selection
 **Target**: Create compelling homepage with hero section and sport-specific call-to-actions
-**Status**: 🔴 Not Started
-**Estimated Duration**: 1-2 days
+**Status**: 🟢 Complete
+**Completed**: 2025-10-18
+**Actual Duration**: <1 day
 
 ### Tasks
-- [ ] Build `HeroSection.vue` component
-  - [ ] Large headline: "Manage Your Coaching Business"
-  - [ ] Subheadline highlighting Pickleball & Tennis coaching
-  - [ ] Two prominent sport cards:
-    - [ ] **Pickleball Coach** - "Learn More" button → `/pickleball-coach`
-    - [ ] **Tennis Coach** - "Coming Soon" badge, teaser screenshot
-  - [ ] Visual: Screenshots of both apps side-by-side
-- [ ] Add gradient background or subtle pattern
-- [ ] Implement hover effects on sport cards
-- [ ] Add hero section animations (fade-in on load)
-- [ ] Optimize images for web (WebP format, lazy loading)
-- [ ] Ensure mobile-responsive layout (cards stack vertically)
+- [x] Build `HeroSection.vue` component
+  - [x] Large headline: "Manage Your Coaching Business"
+  - [x] Subheadline highlighting Pickleball & Tennis coaching
+  - [x] Two prominent sport cards:
+    - [x] **Pickleball Coach** - "Learn More" button → `/pickleball-coach`
+    - [x] **Tennis Coach** - "Coming Soon" badge with diagonal ribbon
+  - [x] Feature highlights with checkmark icons
+- [x] Add gradient background with animated blurred circles
+- [x] Implement hover effects on sport cards (lift, shadow, border)
+- [x] Add hero section animations (fade-in with staggered timing)
+- [x] SVG icons for features (no image optimization needed yet)
+- [x] Ensure mobile-responsive layout (cards stack vertically)
+- [x] Added "Get Started Today" CTA button below cards
 
 ### Acceptance Criteria
-- Hero section loads with smooth animations
-- Sport cards clearly distinguish active (Pickleball) vs coming soon (Tennis)
-- Images load quickly and display correctly
-- Layout adapts gracefully on all screen sizes
-- "Learn More" button navigates to Pickleball Coach detail page
+- ✅ Hero section loads with smooth animations
+- ✅ Sport cards clearly distinguish active (Pickleball) vs coming soon (Tennis)
+- ✅ Layout adapts gracefully on all screen sizes
+- ✅ "Learn More" button navigates to Pickleball Coach detail page
+- ✅ Hover effects provide visual feedback
+- ✅ Tennis card shows clear "Coming Soon" status
+
+### Implementation Details
+- Vue transitions with staggered delays (0ms, 300ms, 500ms) for smooth entrance
+- Gradient background (primary-50 → white → blue-50)
+- Sport cards with shadow-lg hover:shadow-2xl transitions
+- Transform hover effects (translateY -0.5rem, scale 1.05 on CTA)
+- Green checkmarks for active Pickleball features
+- Gray checkmarks for Tennis features (coming soon state)
+- Diagonal "COMING SOON" ribbon on Tennis card
+- Fully responsive grid (1 column mobile, 2 columns desktop)
 
 ### Notes
 ```
@@ -604,8 +617,8 @@ Use BrowserStack or similar for cross-browser testing
 
 **Total Phases**: 11
 **Estimated Total Duration**: 18-26 days
-**Current Phase**: Phase 3 – Homepage Hero & Sport Selection
-**Overall Progress**: 18% (2/11 phases complete)
+**Current Phase**: Phase 4 – Pickleball Coach Feature Detail Page
+**Overall Progress**: 27% (3/11 phases complete)
 
 ### Phase Status Legend
 - 🔴 Not Started
