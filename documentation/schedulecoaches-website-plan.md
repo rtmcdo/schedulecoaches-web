@@ -3,7 +3,7 @@
 **Created**: 2025-10-17
 **Last Updated**: 2025-10-18
 **Feature**: Public-facing marketing website for Pickleball Coach and Tennis Coach apps
-**Status**: 🟡 In Progress - Phase 1 Complete
+**Status**: 🟡 In Progress - Phase 4 Complete
 **Approach**: Build a Vue.js static website with Tailwind CSS, mirroring Pickleball Journal's clean design, integrating Stripe subscriptions with referral tracking, and deploying to Azure Static Web Apps
 
 ---
@@ -186,48 +186,74 @@ with "Coming Soon" overlay badge
 
 ## Phase 4: Pickleball Coach Feature Detail Page
 **Target**: Build comprehensive feature showcase page with app screenshots and bullet points
-**Status**: 🔴 Not Started
-**Estimated Duration**: 2-3 days
+**Status**: 🟢 Complete
+**Completed**: 2025-10-18
+**Actual Duration**: 1 day
 
 ### Tasks
-- [ ] Create `PickleballCoach.vue` view
-- [ ] Build `FeatureSection.vue` reusable component
-  - [ ] Props: title, description, bulletPoints[], screenshot, imagePosition (left/right)
-  - [ ] Alternating left/right image layout
-  - [ ] 4 bullet points with colored icons (Dashboard, Calendar, Clients, Settings)
-- [ ] Implement four main feature sections:
-  - [ ] **Dashboard** - Revenue tracking, upcoming sessions, statistics
-  - [ ] **Calendar** - Schedule management, availability, blocked times
-  - [ ] **Clients** - Client database, contact info, session history
-  - [ ] **Settings** - Locations, session types, pricing, coach profile
-- [ ] Add hero section at top with app icon and tagline
-- [ ] Build `FeatureGrid.vue` - overview grid with 6-8 icons
-- [ ] Add multiple "Buy Now" CTAs throughout page
-- [ ] Include app screenshots (user will provide)
-  - [ ] 4 main feature screenshots
-  - [ ] Additional UI showcase images
+- [x] Create `PickleballCoach.vue` view
+- [x] Build `FeatureSection.vue` reusable component
+  - [x] Props: title, description, features[], screenshot, imagePosition (left/right)
+  - [x] Alternating left/right image layout
+  - [x] 4 bullet points with green checkmark icons per section
+- [x] Implement four main feature sections:
+  - [x] **Dashboard & Analytics** - Schedule overview, appointments, revenue tracking, coaching activities
+  - [x] **Calendar Management** - Weekly/monthly views, drag-and-drop, recurring availability, calendar sync
+  - [x] **Client Management** - Client profiles, session history, packages, automated reminders
+  - [x] **Business Settings** - Session types (private coaching and clinics), pricing, booking URL & QR code, availability
+- [x] Add hero section at top with pricing badge and dual CTAs
+- [x] Build feature grid section with 8 quick feature icons
+- [x] Add `PricingSection.vue` component with $20/month pricing
+- [x] Add multiple CTAs throughout page (hero, pricing, bottom CTA section)
+- [x] Include app screenshots from pbcoach.vnext
+  - [x] 4 main feature screenshots (dashboard, calendar, clients, settings)
+  - [x] Additional screenshots (session-types, availability)
 
 ### Acceptance Criteria
-- Feature sections alternate left/right screenshot positioning
-- Bullet points display with appropriate icons (calendar, users, dollar-sign, settings)
-- All screenshots render with proper aspect ratio
-- "Buy Now" CTAs are prominent and consistent
-- Page is fully responsive on mobile
-- User can provide screenshots and content is easily swappable
+- ✅ Feature sections alternate left/right screenshot positioning
+- ✅ Bullet points display with green checkmark icons (SVG)
+- ✅ All screenshots render in phone frame mockup with proper aspect ratio
+- ✅ Multiple "Buy Now" / "Start Free Trial" CTAs are prominent and consistent
+- ✅ Page is fully responsive on mobile (sections stack, cards adapt)
+- ✅ Screenshots are easily swappable via public/assets/screenshots/ folder
+
+### Implementation Details
+- **FeatureSection.vue**: Reusable component with TypeScript interfaces
+  - Accepts title, description, features array, screenshot path, imagePosition prop
+  - Phone frame mockup with decorative blur elements (primary-100 and blue-100)
+  - Alternating layouts using grid-flow-dense and conditional col-start classes
+- **PricingSection.vue**: Standalone pricing component
+  - $20/month pricing with gradient background
+  - 5 included features with green checkmarks
+  - "Start Your Free Trial" CTA linking to /checkout-success
+- **PickleballCoach.vue**: Full feature page implementation
+  - Hero section with "Only $20/month" badge and dual CTAs
+  - 4 FeatureSection components with alternating backgrounds (white, gray-50)
+  - Feature grid with 8 icons: Smart Scheduling, Client Database, SMS & Email Reminders, Revenue Tracking, Mobile Apps, Booking URL & QR Code, Session Types, Session Packages
+  - Bottom CTA section with gradient background (primary-600 to blue-600)
+- **Screenshots**: 6 PNG files copied to public/assets/screenshots/
+  - dashboard.png, calendar.png, clients.png, settings.png, session-types.png, availability.png
+  - Renamed from simulator format for easier reference
 
 ### Notes
 ```
-Feature section structure (mirror pbjournal):
-- Section container: max-w-6xl mx-auto
+Feature section structure (implemented):
+- Section container: container mx-auto px-6
 - Grid: grid-cols-1 lg:grid-cols-2 gap-12
-- Image: rounded-lg shadow-xl
-- Bullet points: space-y-4 with icon + text
+- Image: Phone frame mockup with rounded-[3rem] shadow-2xl
+- Bullet points: space-y-4 with green checkmark SVG icons
 
-Icons to use (react-icons or similar):
-- Dashboard: FaChartLine
-- Calendar: FaCalendar
-- Clients: FaUsers
-- Settings: FaCog
+Icons used (inline SVG):
+- Dashboard: Chart/Graph icon
+- Calendar: Calendar icon
+- Clients: Users/People icon
+- Settings: Gear/Cog icon
+- Notifications: Bell icon
+- Revenue: Dollar/Currency icon
+- Mobile: Phone icon
+- Links: Link icon
+- Documents: File icon
+- Checklist: Clipboard icon
 ```
 
 ---
@@ -617,8 +643,8 @@ Use BrowserStack or similar for cross-browser testing
 
 **Total Phases**: 11
 **Estimated Total Duration**: 18-26 days
-**Current Phase**: Phase 4 – Pickleball Coach Feature Detail Page
-**Overall Progress**: 27% (3/11 phases complete)
+**Current Phase**: Phase 5 – Stripe Subscription Integration
+**Overall Progress**: 36% (4/11 phases complete)
 
 ### Phase Status Legend
 - 🔴 Not Started
