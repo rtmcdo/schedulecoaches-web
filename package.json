@@ -26,6 +26,9 @@
     "url": "https://github.com/rtmcdo/schedulecoaches-web/issues"
   },
   "homepage": "https://github.com/rtmcdo/schedulecoaches-web#readme",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "dependencies": {
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
