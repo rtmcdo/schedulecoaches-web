@@ -1,17 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import { useStripeCheckout } from '@/composables/useStripeCheckout'
 import { useAuth } from '@/composables/useAuth'
 
-const route = useRoute()
 const mobileMenuOpen = ref(false)
 const sportsDropdownOpen = ref(false)
 const userDropdownOpen = ref(false)
 const isScrolled = ref(false)
 
-const { isLoading, error, createCheckoutSession } = useStripeCheckout()
-const { user, isAuthenticated, openAuthModal, signOut } = useAuth()
+const { isLoading, createCheckoutSession } = useStripeCheckout()
+const { user, isAuthenticated, signOut } = useAuth()
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 10

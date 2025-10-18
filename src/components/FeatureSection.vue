@@ -11,7 +11,7 @@ interface Props {
   imagePosition?: 'left' | 'right'
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   imagePosition: 'right'
 })
 </script>
