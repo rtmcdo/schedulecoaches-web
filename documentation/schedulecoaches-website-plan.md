@@ -74,29 +74,30 @@ Reference pbweb structure but adapt for Vue:
 
 ## Phase 2: Core Layout & Navigation
 **Target**: Build site-wide layout with header, footer, and responsive navigation
-**Status**: 🔴 Not Started
-**Estimated Duration**: 1-2 days
+**Status**: 🟢 Complete
+**Completed**: 2025-10-18
+**Actual Duration**: <1 day
 
 ### Tasks
-- [ ] Create `App.vue` with global layout structure
-- [ ] Build `HeaderNav.vue` component
-  - [ ] Logo placeholder (left side)
-  - [ ] Navigation links: Home, Pickleball Coach, FAQ, Contact
-  - [ ] "Buy Now" CTA button (right side, prominent)
-  - [ ] Mobile hamburger menu with slide-out drawer
-- [ ] Build `FooterNav.vue` component
-  - [ ] Links to Privacy Policy, Terms of Service, Contact
-  - [ ] Social media icons (placeholder)
-  - [ ] Copyright notice
-- [ ] Implement Vue Router with routes:
-  - [ ] `/` - Home
-  - [ ] `/pickleball-coach` - Pickleball Coach detail page
-  - [ ] `/faq` - FAQ page
-  - [ ] `/contact` - Contact/Support page
-  - [ ] `/privacy-policy` - Privacy Policy
-  - [ ] `/terms-of-service` - Terms of Service
-- [ ] Add smooth scroll behavior for anchor links
-- [ ] Implement responsive breakpoints matching pbjournal
+- [x] Create `App.vue` with global layout structure
+- [x] Build `HeaderNav.vue` component
+  - [x] Text-based logo "ScheduleCoaches" (left side)
+  - [x] Navigation links: Home, Pickleball Coach, FAQ, Contact
+  - [x] "Buy Now" CTA button (right side, prominent)
+  - [x] Mobile hamburger menu with slide-out drawer
+- [x] Build `FooterNav.vue` component
+  - [x] Links to Privacy Policy, Terms of Service, Contact
+  - [x] Social media icons (Facebook, Instagram)
+  - [x] Copyright notice (JRM Software LLC)
+- [x] Vue Router routes implemented (completed in Phase 1):
+  - [x] `/` - Home
+  - [x] `/pickleball-coach` - Pickleball Coach detail page
+  - [x] `/faq` - FAQ page
+  - [x] `/contact` - Contact/Support page
+  - [x] `/privacy-policy` - Privacy Policy
+  - [x] `/terms-of-service` - Terms of Service
+- [x] Add smooth scroll behavior for anchor links
+- [x] Implement responsive breakpoints matching pbjournal
 
 ### Acceptance Criteria
 - Header sticky on scroll with subtle shadow
@@ -591,8 +592,8 @@ Use BrowserStack or similar for cross-browser testing
 
 **Total Phases**: 11
 **Estimated Total Duration**: 18-26 days
-**Current Phase**: Phase 2 – Core Layout & Navigation
-**Overall Progress**: 9% (1/11 phases complete)
+**Current Phase**: Phase 3 – Homepage Hero & Sport Selection
+**Overall Progress**: 18% (2/11 phases complete)
 
 ### Phase Status Legend
 - 🔴 Not Started

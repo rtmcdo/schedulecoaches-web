@@ -1,10 +1,15 @@
 <script setup lang="ts">
-// Root component
+import HeaderNav from './components/HeaderNav.vue'
+import FooterNav from './components/FooterNav.vue'
 </script>
 
 <template>
-  <div id="app">
-    <RouterView />
+  <div id="app" class="flex flex-col min-h-screen">
+    <HeaderNav />
+    <main class="flex-grow pt-16 md:pt-20">
+      <RouterView />
+    </main>
+    <FooterNav />
   </div>
 </template>
 
