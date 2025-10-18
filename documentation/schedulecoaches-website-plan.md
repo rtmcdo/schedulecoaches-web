@@ -262,57 +262,158 @@ Icons used (inline SVG):
 **Target**: Implement Stripe Checkout with monthly subscription plan and referral code support
 **Status**: 🔴 Not Started
 **Estimated Duration**: 2-3 days
+**Reference**: Stripe sample code in `/stripe` directory, official Billing quickstart guide
 
 ### Tasks
-- [ ] Set up Stripe account configuration
-  - [ ] Create product: "Pickleball Coach Monthly"
-  - [ ] Set monthly price (define pricing)
-  - [ ] Configure payment methods (card, Apple Pay, Google Pay)
-- [ ] Create backend API endpoint (Azure Function or App Service)
-  - [ ] `/api/create-checkout-session` - Initiates Stripe Checkout
-    - [ ] Accept: `productType` ('pickleball' | 'tennis'), `referralCode` (optional)
-    - [ ] Validate referral code against database
-    - [ ] Apply discount if valid referral code
-    - [ ] Return Stripe Checkout session ID
-  - [ ] `/api/stripe-webhook` - Handle Stripe events
-    - [ ] `checkout.session.completed` - Create user account, activate subscription
+
+#### Step 1: Stripe Dashboard Setup
+- [ ] Create Product in Stripe Dashboard
+  - [ ] Name: "Pickleball Coach Monthly"
+  - [ ] Price: $20.00 USD
+  - [ ] Billing period: Monthly
+  - [ ] Assign lookup_key: `pickleball_monthly`
+- [ ] (Optional) Enable additional payment methods
+  - [ ] Apple Pay, Google Pay via Dashboard settings
+  - [ ] Checkout will dynamically display based on customer location
+- [ ] Create test product for development
+  - [ ] Use test mode pricing
+
+#### Step 2: Build Frontend (Vue.js)
+- [ ] Update existing checkout buttons to call API
+  - [ ] Replace all "Buy Now" / "Start Free Trial" RouterLinks
+  - [ ] Update `src/components/PricingSection.vue`
+  - [ ] Update `src/views/PickleballCoach.vue` CTAs
+  - [ ] Update `src/components/HeroSection.vue` "Get Started" button
+- [ ] Create checkout handler composable
+  - [ ] `src/composables/useStripeCheckout.ts`
+  - [ ] Handles POST to `/api/create-checkout-session`
+  - [ ] Shows loading state during session creation
+  - [ ] Redirects to Stripe hosted checkout
+- [ ] (Optional) Add referral code input
+  - [ ] Input field on pricing section
+  - [ ] Validates format before checkout
+  - [ ] Passes code to API endpoint
+- [ ] Update `/checkout-success` view
+  - [ ] Show subscription confirmation message
+  - [ ] Display App Store download link
+  - [ ] Add "Manage Billing" button → customer portal
+  - [ ] Retrieve session_id from URL query params
+- [ ] Create `/checkout-cancel` view (optional)
+  - [ ] Simple page when user clicks back in Stripe Checkout
+
+#### Step 3: Build Backend (Azure Functions - Node.js)
+- [ ] Set up Azure Functions project structure
+  - [ ] Create `/api` directory in project root
+  - [ ] Initialize Node.js Azure Functions
+  - [ ] Install dependencies: `stripe`, `@azure/functions`
+- [ ] Create `/api/create-checkout-session` function
+  - [ ] Accept POST request with `lookup_key` and optional `referral_code`
+  - [ ] Initialize Stripe with secret API key (from environment variable)
+  - [ ] Retrieve price using `stripe.prices.list({ lookup_keys: [lookup_key] })`
+  - [ ] Create checkout session with:
+    - [ ] `mode: 'subscription'`
+    - [ ] `line_items` with retrieved price
+    - [ ] `success_url` pointing to `/checkout-success?session_id={CHECKOUT_SESSION_ID}`
+    - [ ] `cancel_url` pointing to `/checkout-cancel`
+    - [ ] `billing_address_collection: 'auto'`
+    - [ ] Optional: `metadata` for referral code tracking
+  - [ ] Return session URL as JSON
+- [ ] Create `/api/create-portal-session` function
+  - [ ] Accept POST with `session_id`
+  - [ ] Retrieve checkout session: `stripe.checkout.sessions.retrieve(session_id)`
+  - [ ] Create portal session: `stripe.billingPortal.sessions.create({ customer_account })`
+  - [ ] Return portal URL as JSON
+- [ ] Create `/api/webhook` function
+  - [ ] Use `express.raw()` middleware for signature verification
+  - [ ] Get webhook secret from environment variables
+  - [ ] Verify webhook signature: `stripe.webhooks.constructEvent()`
+  - [ ] Handle events:
+    - [ ] `customer.subscription.created` - Create user account, grant access
     - [ ] `customer.subscription.updated` - Update subscription status
-    - [ ] `customer.subscription.deleted` - Deactivate subscription
-- [ ] Build `BuyNowButton.vue` component
-  - [ ] Accepts `productType` prop
-  - [ ] Shows loading state during checkout session creation
-  - [ ] Redirects to Stripe Checkout
-- [ ] Add referral code input on checkout page
-  - [ ] Validates code before checkout
-  - [ ] Shows discount amount if valid
-  - [ ] Passes code to checkout session creation
-- [ ] Create success page `/checkout-success`
-  - [ ] Shows subscription confirmation
-  - [ ] Displays iOS app download link
-  - [ ] Provides login credentials or magic link
+    - [ ] `customer.subscription.deleted` - Revoke access
+    - [ ] `customer.subscription.trial_will_end` - Send reminder email
+    - [ ] `entitlements.active_entitlement_summary.updated` - Update entitlements
+  - [ ] Return 200 response to acknowledge receipt
+
+#### Step 4: Configuration & Environment Variables
+- [ ] Add environment variables
+  - [ ] `STRIPE_SECRET_KEY` - Stripe secret API key (test and live)
+  - [ ] `STRIPE_PUBLISHABLE_KEY` - Stripe publishable key (frontend)
+  - [ ] `STRIPE_WEBHOOK_SECRET` - Webhook signing secret
+  - [ ] `SUCCESS_URL` - Full URL for success page
+  - [ ] `CANCEL_URL` - Full URL for cancel page
+- [ ] Configure Azure Static Web Apps to include `/api` folder
+  - [ ] Update `staticwebapp.config.json` or GitHub Actions workflow
+  - [ ] Set environment variables in Azure portal
+
+#### Step 5: Testing
+- [ ] Test locally using Stripe CLI
+  - [ ] Install Stripe CLI: `brew install stripe/stripe-cli/stripe`
+  - [ ] Login: `stripe login`
+  - [ ] Forward webhooks: `stripe listen --forward-to localhost:7071/api/webhook`
+  - [ ] Get webhook signing secret from CLI output
+- [ ] Test checkout flow with test cards
+  - [ ] Success: `4242 4242 4242 4242`
+  - [ ] Requires authentication: `4000 0025 0000 3155`
+  - [ ] Declined: `4000 0000 0000 9995`
+- [ ] Verify webhook events fire correctly
+  - [ ] Check Azure Functions logs
+  - [ ] Verify database records created
+- [ ] Test customer portal
+  - [ ] Verify customers can update payment methods
+  - [ ] Test subscription cancellation flow
 
 ### Acceptance Criteria
-- Clicking "Buy Now" initiates Stripe Checkout
-- Checkout session includes monthly subscription plan
-- Valid referral codes apply discount correctly
-- Webhook successfully creates user account on payment completion
-- User receives email with app download link and login instructions
-- Subscription status syncs with database for app authorization
+- ✅ Product and price created in Stripe Dashboard with lookup_key
+- ✅ Clicking "Buy Now" calls Azure Function to create checkout session
+- ✅ Customer redirects to Stripe-hosted checkout page
+- ✅ Successful payment redirects to `/checkout-success`
+- ✅ Webhook receives and verifies subscription events
+- ✅ User account created in database on successful subscription
+- ✅ Customer portal allows subscription management
+- ✅ Test cards work correctly in test mode
+- ✅ Referral code (if provided) tracked in metadata
 
 ### Notes
 ```
-Stripe Checkout flow:
-1. User clicks "Buy Now" → Frontend calls /api/create-checkout-session
-2. API validates referral code, creates Stripe session with metadata
-3. User redirected to Stripe Checkout (hosted)
-4. Payment completed → Stripe webhook fires
-5. Webhook creates user in database with subscription status
-6. User redirected to /checkout-success with next steps
+Architecture:
+- Frontend (Vue.js) → API (Azure Functions) → Stripe API
+- Stripe → Webhook (Azure Function) → Database
 
-Referral metadata to track:
-- referralCode (who referred)
-- subscriptionId (Stripe subscription ID)
-- createdAt (for commission calculation)
+Stripe Checkout flow:
+1. User clicks "Buy Now" → Vue app calls /api/create-checkout-session
+2. Azure Function retrieves price by lookup_key
+3. Azure Function creates Stripe checkout session
+4. Customer redirects to Stripe hosted checkout (session.url)
+5. Customer completes payment on Stripe
+6. Stripe redirects to /checkout-success?session_id=xxx
+7. Stripe sends webhook event to /api/webhook
+8. Webhook creates user account and activates subscription
+9. User can manage billing via /api/create-portal-session
+
+Sample code location:
+- /stripe/server.js - Express server (adapt to Azure Functions)
+- /stripe/public/*.html - HTML pages (adapt to Vue components)
+
+Test cards:
+- Success: 4242 4242 4242 4242
+- 3D Secure: 4000 0025 0000 3155
+- Declined: 4000 0000 0000 9995
+
+Webhook secret:
+- Test mode: Get from Stripe CLI during local testing
+- Live mode: Get from Stripe Dashboard → Webhooks
+
+lookup_key benefits:
+- No need to hardcode price IDs in frontend code
+- Can update prices in Dashboard without code changes
+- Use same code for test and production
+
+Optional enhancements (Phase 2):
+- Add trial period to checkout session
+- Automate tax collection with Stripe Tax
+- Apply referral code discounts via Coupons API
+- Send welcome email on subscription creation
 ```
 
 ---

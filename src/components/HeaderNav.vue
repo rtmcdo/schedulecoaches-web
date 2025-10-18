@@ -36,9 +36,9 @@ const toggleSportsDropdown = () => {
 <template>
   <header
     class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
-    :class="isScrolled ? 'shadow-md' : 'shadow-md md:shadow-none'"
+    :class="isScrolled ? 'bg-white shadow-md' : 'shadow-md md:shadow-none'"
   >
-    <nav class="bg-white md:bg-transparent mx-auto flex justify-between items-center py-2 px-5 md:py-10 max-w-7xl">
+    <nav class="mx-auto flex justify-between items-center py-4 px-5 md:py-4 max-w-7xl">
       <!-- Logo -->
       <RouterLink to="/" class="flex items-center gap-2" @click="closeMobileMenu">
         <span class="text-xl font-semibold cursor-pointer text-primary-600">
