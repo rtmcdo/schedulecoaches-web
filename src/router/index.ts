@@ -18,6 +18,21 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/TennisCoach.vue')
   },
   {
+    path: '/sign-up',
+    name: 'SignUp',
+    component: () => import('@/views/SignUp.vue')
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue')
+  },
+  {
+    path: '/account',
+    name: 'Account',
+    component: () => import('@/views/Account.vue')
+  },
+  {
     path: '/faq',
     name: 'FAQ',
     component: () => import('@/views/FAQ.vue')

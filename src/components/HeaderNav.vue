@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useStripeCheckout } from '@/composables/useStripeCheckout'
-import { useAuth } from '@/composables/useAuth'
 
 const mobileMenuOpen = ref(false)
 const sportsDropdownOpen = ref(false)
 const userDropdownOpen = ref(false)
 const isScrolled = ref(false)
 
-const { isLoading, createCheckoutSession } = useStripeCheckout()
-const { user, isAuthenticated, signOut } = useAuth()
+// TODO: Implement real authentication
+const isAuthenticated = ref(false)
+const user = ref<{ name: string; email: string } | null>(null)
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 10
@@ -42,12 +41,8 @@ const toggleUserDropdown = () => {
   userDropdownOpen.value = !userDropdownOpen.value
 }
 
-const handleCheckout = async () => {
-  await createCheckoutSession('pickleball_monthly')
-}
-
 const handleSignOut = () => {
-  signOut()
+  // signOut()
   closeMobileMenu()
 }
 
@@ -141,6 +136,14 @@ const getUserInitials = (name: string) => {
             Contact
           </RouterLink>
         </li>
+        <li v-if="!isAuthenticated">
+          <RouterLink
+            to="/login"
+            class="text-gray-700 hover:text-primary-600 transition-colors font-medium"
+          >
+            Login
+          </RouterLink>
+        </li>
       </ul>
 
       <!-- Desktop CTA / User Menu -->
@@ -180,18 +183,13 @@ const getUserInitials = (name: string) => {
               </div>
 
               <!-- Menu Items -->
-              <a
-                href="#"
+              <RouterLink
+                to="/account"
+                @click="userDropdownOpen = false"
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
               >
-                My Account
-              </a>
-              <a
-                href="#"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
-              >
-                Billing
-              </a>
+                Manage Account
+              </RouterLink>
 
               <!-- Sign Out -->
               <button
@@ -204,16 +202,14 @@ const getUserInitials = (name: string) => {
           </Transition>
         </div>
 
-        <!-- Buy Now Button (Not Authenticated) -->
-        <button
+        <!-- Sign Up Button (Not Authenticated) -->
+        <RouterLink
           v-else
-          @click="handleCheckout"
-          :disabled="isLoading"
-          class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          to="/sign-up"
+          class="bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md inline-block"
         >
-          <span v-if="isLoading">Processing...</span>
-          <span v-else>Buy Now</span>
-        </button>
+          Start Free Trial
+        </RouterLink>
       </div>
 
       <!-- Mobile Menu Button -->
@@ -325,6 +321,15 @@ const getUserInitials = (name: string) => {
               Contact
             </RouterLink>
           </li>
+          <li v-if="!isAuthenticated">
+            <RouterLink
+              to="/login"
+              @click="closeMobileMenu"
+              class="text-gray-700 hover:text-primary-600 block transition-colors"
+            >
+              Login
+            </RouterLink>
+          </li>
           <!-- User Info / CTA -->
           <li v-if="isAuthenticated && user" class="pt-2 border-t border-gray-200">
             <div class="flex items-center gap-3 py-3">
@@ -337,18 +342,13 @@ const getUserInitials = (name: string) => {
               </div>
             </div>
             <div class="space-y-2">
-              <a
-                href="#"
+              <RouterLink
+                to="/account"
+                @click="closeMobileMenu"
                 class="block px-4 py-2 text-gray-700 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50"
               >
-                My Account
-              </a>
-              <a
-                href="#"
-                class="block px-4 py-2 text-gray-700 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50"
-              >
-                Billing
-              </a>
+                Manage Account
+              </RouterLink>
               <button
                 @click="handleSignOut"
                 class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors rounded-lg"
@@ -358,16 +358,15 @@ const getUserInitials = (name: string) => {
             </div>
           </li>
 
-          <!-- Buy Now Button (Not Authenticated) -->
+          <!-- Sign Up Button (Not Authenticated) -->
           <li v-else class="pt-2">
-            <button
-              @click="handleCheckout"
-              :disabled="isLoading"
-              class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors shadow-sm text-center w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            <RouterLink
+              to="/sign-up"
+              @click="closeMobileMenu"
+              class="block bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-all shadow-sm text-center w-full"
             >
-              <span v-if="isLoading">Processing...</span>
-              <span v-else>Buy Now</span>
-            </button>
+              Start Free Trial
+            </RouterLink>
           </li>
         </ul>
       </div>

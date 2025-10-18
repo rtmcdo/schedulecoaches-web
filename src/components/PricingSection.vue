@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import { useStripeCheckout } from '@/composables/useStripeCheckout'
-
-const { isLoading, error, createCheckoutSession } = useStripeCheckout()
-
-const handleCheckout = async () => {
-  await createCheckoutSession('pickleball_monthly')
-}
+import { RouterLink } from 'vue-router'
 </script>
 
 <template>
@@ -66,15 +60,12 @@ const handleCheckout = async () => {
           </div>
 
           <!-- CTA Button -->
-          <button
-            @click="handleCheckout"
-            :disabled="isLoading"
-            class="block w-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-center px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          <RouterLink
+            to="/sign-up"
+            class="block w-full bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-bold text-center px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            <span v-if="isLoading">Processing...</span>
-            <span v-else>Start Your Free Trial</span>
-          </button>
-          <p v-if="error" class="text-red-600 text-sm mt-2 text-center">{{ error }}</p>
+            Start Your Free Trial
+          </RouterLink>
         </div>
       </div>
     </div>

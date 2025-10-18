@@ -2,13 +2,6 @@
 import { RouterLink } from 'vue-router'
 import FeatureSection from '@/components/FeatureSection.vue'
 import PricingSection from '@/components/PricingSection.vue'
-import { useStripeCheckout } from '@/composables/useStripeCheckout'
-
-const { isLoading, error, createCheckoutSession } = useStripeCheckout()
-
-const handleCheckout = async () => {
-  await createCheckoutSession('pickleball_monthly')
-}
 
 // Feature data for each section
 const dashboardFeatures = [
@@ -56,14 +49,12 @@ const settingsFeatures = [
           Schedule sessions, manage clients, track revenue, and grow your business—all from your phone or desktop.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            @click="handleCheckout"
-            :disabled="isLoading"
-            class="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          <RouterLink
+            to="/sign-up"
+            class="inline-block bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            <span v-if="isLoading">Processing...</span>
-            <span v-else>Start Your Free Trial</span>
-          </button>
+            Start Your Free Trial
+          </RouterLink>
           <a
             href="#features"
             class="inline-block bg-white hover:bg-gray-50 text-primary-600 font-bold px-8 py-4 rounded-lg border-2 border-primary-600 transition-all duration-300"
@@ -71,7 +62,6 @@ const settingsFeatures = [
             See All Features
           </a>
         </div>
-        <p v-if="error" class="text-red-600 text-sm mt-4 text-center">{{ error }}</p>
       </div>
     </section>
 
@@ -233,14 +223,12 @@ const settingsFeatures = [
           Start your free trial today—no credit card required.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            @click="handleCheckout"
-            :disabled="isLoading"
-            class="inline-block bg-white hover:bg-gray-100 text-primary-600 font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          <RouterLink
+            to="/sign-up"
+            class="inline-block bg-white hover:bg-gray-100 text-primary-600 font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            <span v-if="isLoading">Processing...</span>
-            <span v-else>Start Free Trial</span>
-          </button>
+            Start Free Trial
+          </RouterLink>
           <RouterLink
             to="/faq"
             class="inline-block bg-transparent hover:bg-primary-700 text-white font-bold px-8 py-4 rounded-lg border-2 border-white transition-all duration-300"
