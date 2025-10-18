@@ -71,7 +71,7 @@ const getUserInitials = (name: string) => {
       <!-- Logo -->
       <RouterLink to="/" class="flex items-center gap-2" @click="closeMobileMenu">
         <span class="text-xl font-semibold cursor-pointer text-primary-600">
-          ScheduleCoaches
+          Schedule Coaches
         </span>
       </RouterLink>
 
