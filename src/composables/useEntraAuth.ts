@@ -84,55 +84,19 @@ export async function signUpWithEmail(email: string, lookupKey: string = 'pickle
   try {
     const msal = await initializeMsal()
 
-    // Sign up flow (creates account in Entra ID)
-    const result = await msal.loginPopup({
-      scopes: ['openid', 'profile', 'email'],
+    // Store signup intent for after redirect
+    sessionStorage.setItem('entra_signup_email', email)
+    sessionStorage.setItem('entra_signup_lookup_key', lookupKey)
+    sessionStorage.setItem('entra_auth_action', 'signup')
+
+    // Sign up flow using redirect (matches pbcoach implementation)
+    await msal.loginRedirect({
+      scopes: ['openid', 'profile', 'email', 'offline_access'],
       prompt: 'create', // Forces account creation
       loginHint: email
     })
 
-    if (!result) {
-      throw new Error('Sign up cancelled')
-    }
-
-    // Get access token
-    const accessToken = result.accessToken
-
-    // Call authMe to create user in our database
-    const authMeResponse = await fetch(`${API_URL}/auth-me`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    })
-
-    if (!authMeResponse.ok) {
-      throw new Error('Failed to create user account')
-    }
-
-    const userData = await authMeResponse.json()
-    currentUser.value = userData.user
-
-    // Now redirect to Stripe checkout with user's email
-    const checkoutResponse = await fetch(`${API_URL}/create-checkout-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({
-        lookup_key: lookupKey,
-        customer_email: result.account?.username || email
-      })
-    })
-
-    if (!checkoutResponse.ok) {
-      throw new Error('Failed to create checkout session')
-    }
-
-    const checkoutData = await checkoutResponse.json()
-
-    // Redirect to Stripe
-    window.location.href = checkoutData.url
+    // Redirect happens, flow continues in handleRedirectCallback
 
   } catch (err: any) {
     console.error('Sign up error:', err)
@@ -152,53 +116,17 @@ export async function signUpWithGoogle(lookupKey: string = 'pickleball_monthly')
   try {
     const msal = await initializeMsal()
 
-    const result = await msal.loginPopup({
-      scopes: ['openid', 'profile', 'email'],
+    // Store signup intent
+    sessionStorage.setItem('entra_signup_lookup_key', lookupKey)
+    sessionStorage.setItem('entra_auth_action', 'signup')
+
+    await msal.loginRedirect({
+      scopes: ['openid', 'profile', 'email', 'offline_access'],
       prompt: 'select_account',
       extraQueryParameters: {
         domain_hint: 'google.com'
       }
     })
-
-    if (!result) {
-      throw new Error('Google sign up cancelled')
-    }
-
-    const accessToken = result.accessToken
-
-    // Call authMe
-    const authMeResponse = await fetch(`${API_URL}/auth-me`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    })
-
-    if (!authMeResponse.ok) {
-      throw new Error('Failed to create user account')
-    }
-
-    const userData = await authMeResponse.json()
-    currentUser.value = userData.user
-
-    // Redirect to Stripe
-    const checkoutResponse = await fetch(`${API_URL}/create-checkout-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({
-        lookup_key: lookupKey,
-        customer_email: result.account?.username
-      })
-    })
-
-    if (!checkoutResponse.ok) {
-      throw new Error('Failed to create checkout session')
-    }
-
-    const checkoutData = await checkoutResponse.json()
-    window.location.href = checkoutData.url
 
   } catch (err: any) {
     console.error('Google sign up error:', err)
@@ -218,53 +146,17 @@ export async function signUpWithApple(lookupKey: string = 'pickleball_monthly') 
   try {
     const msal = await initializeMsal()
 
-    const result = await msal.loginPopup({
-      scopes: ['openid', 'profile', 'email'],
+    // Store signup intent
+    sessionStorage.setItem('entra_signup_lookup_key', lookupKey)
+    sessionStorage.setItem('entra_auth_action', 'signup')
+
+    await msal.loginRedirect({
+      scopes: ['openid', 'profile', 'email', 'offline_access'],
       prompt: 'select_account',
       extraQueryParameters: {
         domain_hint: 'apple.com'
       }
     })
-
-    if (!result) {
-      throw new Error('Apple sign up cancelled')
-    }
-
-    const accessToken = result.accessToken
-
-    // Call authMe
-    const authMeResponse = await fetch(`${API_URL}/auth-me`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    })
-
-    if (!authMeResponse.ok) {
-      throw new Error('Failed to create user account')
-    }
-
-    const userData = await authMeResponse.json()
-    currentUser.value = userData.user
-
-    // Redirect to Stripe
-    const checkoutResponse = await fetch(`${API_URL}/create-checkout-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({
-        lookup_key: lookupKey,
-        customer_email: result.account?.username
-      })
-    })
-
-    if (!checkoutResponse.ok) {
-      throw new Error('Failed to create checkout session')
-    }
-
-    const checkoutData = await checkoutResponse.json()
-    window.location.href = checkoutData.url
 
   } catch (err: any) {
     console.error('Apple sign up error:', err)
@@ -284,40 +176,23 @@ export async function login(email?: string) {
   try {
     const msal = await initializeMsal()
 
-    const result = await msal.loginPopup({
-      scopes: ['openid', 'profile', 'email'],
+    // Store login intent
+    sessionStorage.setItem('entra_auth_action', 'login')
+    if (email) {
+      sessionStorage.setItem('entra_login_email', email)
+    }
+
+    await msal.loginRedirect({
+      scopes: ['openid', 'profile', 'email', 'offline_access'],
       prompt: 'login',
       loginHint: email
     })
 
-    if (!result) {
-      throw new Error('Login cancelled')
-    }
-
-    const accessToken = result.accessToken
-
-    // Call authMe
-    const authMeResponse = await fetch(`${API_URL}/auth-me`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    })
-
-    if (!authMeResponse.ok) {
-      throw new Error('Failed to authenticate')
-    }
-
-    const userData = await authMeResponse.json()
-    currentUser.value = userData.user
-
-    return userData.user
-
   } catch (err: any) {
     console.error('Login error:', err)
     error.value = err.message || 'Login failed'
-    throw err
-  } finally {
     isLoading.value = false
+    throw err
   }
 }
 
@@ -339,6 +214,89 @@ export async function logout() {
 }
 
 /**
+ * Handle redirect callback after Entra authentication
+ * This should be called on the /auth/callback page
+ */
+export async function handleRedirectCallback() {
+  try {
+    const msal = await initializeMsal()
+
+    // Handle the redirect response
+    const response = await msal.handleRedirectPromise()
+
+    if (!response) {
+      console.log('[Entra Auth] No redirect response')
+      return null
+    }
+
+    console.log('[Entra Auth] Redirect successful, processing auth')
+
+    const accessToken = response.accessToken
+    const authAction = sessionStorage.getItem('entra_auth_action')
+
+    // Call authMe to create/get user in database
+    const authMeResponse = await fetch(`${API_URL}/auth-me`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+
+    if (!authMeResponse.ok) {
+      throw new Error('Failed to create user account')
+    }
+
+    const userData = await authMeResponse.json()
+    currentUser.value = userData.user
+
+    // Handle based on auth action
+    if (authAction === 'signup') {
+      // Redirect to Stripe checkout
+      const lookupKey = sessionStorage.getItem('entra_signup_lookup_key') || 'pickleball_monthly'
+      const email = response.account?.username || sessionStorage.getItem('entra_signup_email')
+
+      const checkoutResponse = await fetch(`${API_URL}/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          lookup_key: lookupKey,
+          customer_email: email
+        })
+      })
+
+      if (!checkoutResponse.ok) {
+        throw new Error('Failed to create checkout session')
+      }
+
+      const checkoutData = await checkoutResponse.json()
+
+      // Clean up session storage
+      sessionStorage.removeItem('entra_auth_action')
+      sessionStorage.removeItem('entra_signup_email')
+      sessionStorage.removeItem('entra_signup_lookup_key')
+
+      // Redirect to Stripe
+      window.location.href = checkoutData.url
+      return 'redirecting_to_stripe'
+    } else if (authAction === 'login') {
+      // Clean up and redirect to account page
+      sessionStorage.removeItem('entra_auth_action')
+      sessionStorage.removeItem('entra_login_email')
+
+      return 'login_success'
+    }
+
+    return 'success'
+  } catch (err: any) {
+    console.error('[Entra Auth] Redirect callback error:', err)
+    error.value = err.message || 'Authentication failed'
+    throw err
+  }
+}
+
+/**
  * Check if user is authenticated
  */
 export async function checkAuth(): Promise<boolean> {
@@ -355,7 +313,7 @@ export async function checkAuth(): Promise<boolean> {
     // Try to get token silently
     const result = await msal.acquireTokenSilent({
       account,
-      scopes: ['openid', 'profile', 'email']
+      scopes: ['openid', 'profile', 'email', 'offline_access']
     })
 
     const accessToken = result.accessToken
@@ -395,6 +353,7 @@ export function useEntraAuth() {
     signUpWithApple,
     login,
     logout,
-    checkAuth
+    checkAuth,
+    handleRedirectCallback
   }
 }
