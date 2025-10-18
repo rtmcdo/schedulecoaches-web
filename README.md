@@ -13,7 +13,8 @@ ScheduleCoaches.com serves as the primary marketing and subscription platform fo
 - **Routing**: Vue Router
 - **Styling**: Tailwind CSS
 - **Hosting**: Azure Static Web Apps
-- **Payments**: Stripe Checkout (integration coming in Phase 5)
+- **Backend**: Azure Functions (Node.js)
+- **Payments**: Stripe Checkout
 - **CI/CD**: GitHub Actions
 
 ## Prerequisites
@@ -53,13 +54,34 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
 VITE_API_BASE_URL=http://localhost:7071/api
 ```
 
-### 4. Run development server
+### 4. Set up Azure Functions API
 
+The `/api` directory contains the backend Azure Functions for Stripe integration.
+
+```bash
+cd api
+npm install
+cp local.settings.json.example local.settings.json
+```
+
+Edit `api/local.settings.json` and add your Stripe API keys. See `api/README.md` for detailed setup instructions.
+
+### 5. Run development servers
+
+**Terminal 1 - Frontend:**
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+**Terminal 2 - API (in separate terminal):**
+```bash
+cd api
+npm start
+# or
+func start
+```
+
+The frontend will be available at `http://localhost:5173` and the API at `http://localhost:7071/api`
 
 ## Available Scripts
 
@@ -75,20 +97,31 @@ schedulecoaches-web/
 ├── .github/
 │   └── workflows/
 │       └── azure-static-web-apps.yml  # CI/CD workflow
+├── api/                               # Azure Functions backend
+│   ├── create-checkout-session/       # Stripe checkout endpoint
+│   ├── create-portal-session/         # Stripe portal endpoint
+│   ├── webhook/                       # Stripe webhook handler
+│   ├── host.json                      # Azure Functions config
+│   ├── local.settings.json            # Local environment vars (gitignored)
+│   ├── local.settings.json.example    # Template for local settings
+│   ├── package.json                   # API dependencies
+│   └── README.md                      # API documentation
 ├── documentation/                      # Project documentation
 ├── src/
 │   ├── assets/                        # Images, logos, screenshots
 │   ├── components/                    # Reusable Vue components
+│   ├── composables/                   # Vue composables (useStripeCheckout)
 │   ├── router/                        # Vue Router configuration
 │   │   └── index.ts
 │   ├── views/                         # Page components
 │   │   ├── Home.vue
 │   │   ├── PickleballCoach.vue
+│   │   ├── CheckoutSuccess.vue
+│   │   ├── CheckoutCancel.vue
 │   │   ├── FAQ.vue
 │   │   ├── Contact.vue
 │   │   ├── PrivacyPolicy.vue
-│   │   ├── TermsOfService.vue
-│   │   └── CheckoutSuccess.vue
+│   │   └── TermsOfService.vue
 │   ├── App.vue                        # Root component
 │   ├── main.ts                        # Application entry point
 │   ├── style.css                      # Global styles with Tailwind
@@ -120,16 +153,29 @@ The site automatically deploys to Azure Static Web Apps when pushing to the `mai
    - App location: `/`
    - Output location: `dist`
 
-2. **Configure GitHub Secrets**:
+2. **Configure Environment Variables**:
 
-   The Azure setup will automatically create the `AZURE_STATIC_WEB_APPS_API_TOKEN` secret. Add the following additional secrets in your GitHub repository:
+   In Azure Portal, go to your Static Web App → Configuration → Application settings:
 
-   - Navigate to: Settings → Secrets and variables → Actions
-   - Add the following secrets:
-     - `VITE_STRIPE_PUBLISHABLE_KEY` - Your Stripe publishable key (production)
-     - `VITE_API_BASE_URL` - Your production API URL
+   **Frontend Environment Variables:**
+   - `VITE_STRIPE_PUBLISHABLE_KEY` - Your Stripe live publishable key (pk_live_...)
+   - `VITE_API_BASE_URL` - Leave blank (API is at /api by default)
 
-3. **Configure Custom Domain**:
+   **Backend/API Environment Variables:**
+   - `STRIPE_SECRET_KEY` - Your Stripe live secret key (sk_live_...)
+   - `STRIPE_PUBLISHABLE_KEY` - Your Stripe live publishable key (pk_live_...)
+   - `STRIPE_WEBHOOK_SECRET` - Your Stripe webhook signing secret (whsec_...)
+   - `DOMAIN` - Your production domain (https://schedulecoaches.com)
+
+3. **Configure Stripe Webhook**:
+
+   In Stripe Dashboard:
+   - Go to Developers → Webhooks
+   - Add endpoint: `https://your-site.azurestaticapps.net/api/webhook`
+   - Select events: All subscription events, invoice events
+   - Copy the webhook signing secret to Azure app settings
+
+4. **Configure Custom Domain**:
    - In Azure Portal, go to your Static Web App
    - Navigate to Custom domains
    - Add custom domain: `schedulecoaches.com`
@@ -164,21 +210,28 @@ Value: [verification-token-from-azure]
 
 This project follows an 11-phase implementation plan. See `documentation/schedulecoaches-website-plan.md` for detailed information.
 
-**Current Status**: ✅ Phase 1 Complete - Project Setup & Infrastructure
+**Current Status**: 🚧 Phase 5 In Progress - Stripe Subscription Integration
 
-### Completed Tasks (Phase 1)
-- [x] Initialize Vue 3 project with Vite and TypeScript
-- [x] Install and configure Vue Router
-- [x] Install and configure Tailwind CSS
-- [x] Set up project folder structure
-- [x] Create environment variables configuration
-- [x] Set up GitHub Actions workflow for Azure Static Web Apps
-- [x] Create README with setup instructions
+### Completed Phases
+- ✅ Phase 1: Project Setup & Infrastructure
+- ✅ Phase 2: Core Layout & Navigation
+- ✅ Phase 3: Homepage Hero & Sport Selection
+- ✅ Phase 4: Pickleball Coach Feature Detail Page
 
-### Next Steps (Phase 2)
-- [ ] Build core layout with header and footer components
-- [ ] Implement responsive navigation
-- [ ] Add mobile hamburger menu
+### Phase 5 Progress (Stripe Integration)
+- [x] Frontend integration (Vue composables, checkout buttons, success/cancel pages)
+- [x] Azure Functions backend setup (create-checkout-session, create-portal-session, webhook)
+- [x] Environment variables configuration
+- [ ] Local testing with Stripe CLI
+- [ ] Production deployment and testing
+
+### Next Phases
+- Phase 6: FAQ Page
+- Phase 7: Contact Page
+- Phase 8: Privacy Policy & Terms of Service
+- Phase 9: Testing & QA
+- Phase 10: Performance Optimization
+- Phase 11: Final Deployment & Launch
 
 ## Contributing
 

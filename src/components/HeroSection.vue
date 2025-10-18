@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useStripeCheckout } from '@/composables/useStripeCheckout'
 
 const isVisible = ref(false)
+
+const { isLoading, error, createCheckoutSession } = useStripeCheckout()
+
+const handleCheckout = async () => {
+  await createCheckoutSession('pickleball_monthly')
+}
 
 onMounted(() => {
   // Trigger animation after component mounts
@@ -151,12 +158,15 @@ onMounted(() => {
         enter-to-class="opacity-100 translate-y-0"
       >
         <div v-if="isVisible" class="text-center mt-12">
-          <RouterLink
-            to="/checkout-success"
-            class="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+          <button
+            @click="handleCheckout"
+            :disabled="isLoading"
+            class="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Get Started Today
-          </RouterLink>
+            <span v-if="isLoading">Processing...</span>
+            <span v-else>Get Started Today</span>
+          </button>
+          <p v-if="error" class="text-red-600 text-sm mt-4">{{ error }}</p>
         </div>
       </Transition>
     </div>

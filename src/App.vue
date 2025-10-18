@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import HeaderNav from './components/HeaderNav.vue'
 import FooterNav from './components/FooterNav.vue'
+import AuthModal from './components/auth/AuthModal.vue'
 </script>
 
 <template>
@@ -10,6 +11,9 @@ import FooterNav from './components/FooterNav.vue'
       <RouterView />
     </main>
     <FooterNav />
+
+    <!-- Auth Modal (globally available) -->
+    <AuthModal />
   </div>
 </template>
 

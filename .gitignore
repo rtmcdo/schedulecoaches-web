@@ -40,3 +40,9 @@ dist-ssr
 # Misc
 *.tsbuildinfo
 .cache
+
+# Azure Functions
+api/local.settings.json
+api/bin/
+api/obj/
+api/.python_packages/

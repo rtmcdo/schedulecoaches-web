@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "STRIPE_SECRET_KEY": "sk_test_your_stripe_secret_key_here",
+    "STRIPE_PUBLISHABLE_KEY": "pk_test_your_stripe_publishable_key_here",
+    "STRIPE_WEBHOOK_SECRET": "whsec_your_stripe_webhook_secret_here",
+    "DOMAIN": "http://localhost:5173"
+  },
+  "Host": {
+    "CORS": "http://localhost:5173",
+    "CORSCredentials": false
+  }
+}

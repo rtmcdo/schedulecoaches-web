@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useStripeCheckout } from '@/composables/useStripeCheckout'
+import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
 const mobileMenuOpen = ref(false)
 const sportsDropdownOpen = ref(false)
+const userDropdownOpen = ref(false)
 const isScrolled = ref(false)
+
+const { isLoading, error, createCheckoutSession } = useStripeCheckout()
+const { user, isAuthenticated, openAuthModal, signOut } = useAuth()
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 10
@@ -26,10 +32,34 @@ const toggleMobileMenu = () => {
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false
   sportsDropdownOpen.value = false
+  userDropdownOpen.value = false
 }
 
 const toggleSportsDropdown = () => {
   sportsDropdownOpen.value = !sportsDropdownOpen.value
+}
+
+const toggleUserDropdown = () => {
+  userDropdownOpen.value = !userDropdownOpen.value
+}
+
+const handleCheckout = async () => {
+  await createCheckoutSession('pickleball_monthly')
+}
+
+const handleSignOut = () => {
+  signOut()
+  closeMobileMenu()
+}
+
+// Get user initials for avatar
+const getUserInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2)
 }
 </script>
 
@@ -114,14 +144,77 @@ const toggleSportsDropdown = () => {
         </li>
       </ul>
 
-      <!-- Desktop CTA Button -->
+      <!-- Desktop CTA / User Menu -->
       <div class="hidden md:block">
-        <RouterLink
-          to="/checkout-success"
-          class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors shadow-sm hover:shadow-md inline-block"
+        <!-- User Menu (Authenticated) -->
+        <div v-if="isAuthenticated && user" class="relative">
+          <button
+            @click="toggleUserDropdown"
+            class="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <!-- User Avatar -->
+            <div class="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
+              {{ getUserInitials(user.name) }}
+            </div>
+            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <Transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="transform opacity-0 scale-95"
+            enter-to-class="transform opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="transform opacity-100 scale-100"
+            leave-to-class="transform opacity-0 scale-95"
+          >
+            <div
+              v-if="userDropdownOpen"
+              class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-200"
+            >
+              <!-- User Info -->
+              <div class="px-4 py-3 border-b border-gray-200">
+                <p class="text-sm font-semibold text-gray-900">{{ user.name }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+              </div>
+
+              <!-- Menu Items -->
+              <a
+                href="#"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+              >
+                My Account
+              </a>
+              <a
+                href="#"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+              >
+                Billing
+              </a>
+
+              <!-- Sign Out -->
+              <button
+                @click="handleSignOut"
+                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-200 mt-1"
+              >
+                Sign Out
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- Buy Now Button (Not Authenticated) -->
+        <button
+          v-else
+          @click="handleCheckout"
+          :disabled="isLoading"
+          class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Buy Now
-        </RouterLink>
+          <span v-if="isLoading">Processing...</span>
+          <span v-else>Buy Now</span>
+        </button>
       </div>
 
       <!-- Mobile Menu Button -->
@@ -233,14 +326,49 @@ const toggleSportsDropdown = () => {
               Contact
             </RouterLink>
           </li>
-          <li class="pt-2">
-            <RouterLink
-              to="/checkout-success"
-              @click="closeMobileMenu"
-              class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors shadow-sm inline-block text-center w-full"
+          <!-- User Info / CTA -->
+          <li v-if="isAuthenticated && user" class="pt-2 border-t border-gray-200">
+            <div class="flex items-center gap-3 py-3">
+              <div class="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
+                {{ getUserInitials(user.name) }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900 truncate">{{ user.name }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <a
+                href="#"
+                class="block px-4 py-2 text-gray-700 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50"
+              >
+                My Account
+              </a>
+              <a
+                href="#"
+                class="block px-4 py-2 text-gray-700 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50"
+              >
+                Billing
+              </a>
+              <button
+                @click="handleSignOut"
+                class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors rounded-lg"
+              >
+                Sign Out
+              </button>
+            </div>
+          </li>
+
+          <!-- Buy Now Button (Not Authenticated) -->
+          <li v-else class="pt-2">
+            <button
+              @click="handleCheckout"
+              :disabled="isLoading"
+              class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors shadow-sm text-center w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Buy Now
-            </RouterLink>
+              <span v-if="isLoading">Processing...</span>
+              <span v-else>Buy Now</span>
+            </button>
           </li>
         </ul>
       </div>
