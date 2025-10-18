@@ -52,11 +52,13 @@ async function initializeMsal(): Promise<PublicClientApplication> {
     throw new Error('Either VITE_ENTRA_TENANT_ID or VITE_ENTRA_TENANT_SUBDOMAIN must be set')
   }
 
+  const redirectUri = window.location.origin + '/auth/callback'
+
   const msalConfig: Configuration = {
     auth: {
       clientId,
       authority,
-      redirectUri: window.location.origin + '/auth/callback',
+      redirectUri,
       postLogoutRedirectUri: window.location.origin,
       navigateToLoginRequestUrl: false
     },
@@ -66,7 +68,12 @@ async function initializeMsal(): Promise<PublicClientApplication> {
     }
   }
 
-  console.log('[Entra Auth] Initializing MSAL with authority:', authority)
+  console.log('[Entra Auth] MSAL Configuration:', {
+    authority,
+    clientId,
+    redirectUri,
+    origin: window.location.origin
+  })
 
   msalInstance = new PublicClientApplication(msalConfig)
   await msalInstance.initialize()
