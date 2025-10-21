@@ -1,21 +1,61 @@
 # Subscription Status Tracking System
 
+**Last Updated**: 2025-10-21
+**Schema Version**: v2 (role + subscriptionStatus pattern)
+
 ## Overview
 
-ScheduleCoaches uses Stripe to manage subscriptions. Users must have an active paid subscription to use the pbcoach mobile app. The backend needs to track subscription status and enforce access control.
+ScheduleCoaches uses Stripe to manage subscriptions. Users must have an active paid subscription to use the pbcoach mobile app. The backend tracks subscription status separately from user role for proper separation of concerns.
 
-## User Role States
+**IMPORTANT**: This system aligns with the pbcoach schema using `role` + `subscriptionStatus` fields (NOT combined role values like `coach_unpaid`, `coach_paid`).
 
-The system uses the `role` field in the Users table with these values:
+## User Role + Subscription Status
 
-| Role | Description | Can Use App? |
-|------|-------------|--------------|
-| `coach_unpaid` | Account created, no payment yet | ❌ No |
-| `coach_paid` | Active subscription, payment current | ✅ Yes |
-| `coach_cancelled` | Subscription cancelled | ❌ No |
-| `coach_past_due` | Payment failed, in grace period | ⚠️ Limited (read-only) |
-| `client` | Non-paying user (shouldn't happen in schedulecoaches) | ❌ No |
-| `admin` | System administrator | ✅ Yes (always) |
+The system uses TWO separate fields:
+
+### 1. `role` Field (What the user IS)
+
+Aligns with pbcoach schema:
+
+| Role | Description | Used By |
+|------|-------------|---------|
+| `coach` | Coach user providing services | schedulecoaches.com signups |
+| `client` | User booking sessions | pbcoach app bookings |
+| `admin` | System administrator | Manual assignment |
+
+### 2. `subscriptionStatus` Field (Payment state)
+
+Tracks Stripe subscription state:
+
+| Status | Description | Can Use App? |
+|--------|-------------|--------------|
+| `unpaid` | Account created, no payment yet | ❌ No |
+| `active` | Active subscription, payment current | ✅ Yes |
+| `canceled` | Subscription cancelled | ❌ No |
+| `past_due` | Payment failed, in grace period | ⚠️ Limited (read-only) |
+| `trialing` | Free trial period (if enabled) | ✅ Yes |
+| `incomplete` | Initial payment incomplete | ❌ No |
+| `incomplete_expired` | Payment incomplete, expired | ❌ No |
+
+### Access Control Logic
+
+```typescript
+// Determine if user can access pbcoach app
+function canAccessApp(user: User): boolean {
+  // Admins always have access
+  if (user.role === 'admin') return true;
+
+  // Coaches need active subscription
+  if (user.role === 'coach') {
+    return user.subscriptionStatus === 'active' ||
+           user.subscriptionStatus === 'trialing' ||
+           user.subscriptionStatus === 'past_due'; // Read-only during grace period
+  }
+
+  // Clients don't need subscriptions (they book, not provide coaching)
+  return user.role === 'client';
+}
+```
 
 ## Flow
 
@@ -27,37 +67,48 @@ The system uses the `role` field in the Users table with these values:
 2. Entra ID creates authentication account
 3. User redirected to `/auth/callback`
 4. `/auth-me` endpoint called
-5. Backend creates user with `role: 'coach_unpaid'`
+5. Backend creates user with:
+   - `role: 'coach'`
+   - `subscriptionStatus: 'unpaid'`
 6. Frontend redirects to Stripe checkout
-7. After payment → Stripe webhook updates role
+7. After payment → Stripe webhook updates subscriptionStatus
 
 ### 2. Stripe Webhook Events
 
-Backend must listen for these Stripe webhook events:
+Backend listens for these Stripe webhook events and updates **ONLY subscriptionStatus** (NOT role):
 
 #### `checkout.session.completed`
 - User completed payment
-- **Action:** Update `role` to `'coach_paid'`
+- **Action:** Update `subscriptionStatus` to `'active'`
 - **Action:** Store `stripeCustomerId` and `stripeSubscriptionId` in Users table
+- **Note:** Role stays as `'coach'`
 
 #### `customer.subscription.updated`
 - Subscription status changed
-- **Check status:**
-  - `active` → Update `role` to `'coach_paid'`
-  - `past_due` → Update `role` to `'coach_past_due'`
-  - `canceled` / `unpaid` → Update `role` to `'coach_cancelled'`
+- **Action:** Update `subscriptionStatus` to match Stripe status:
+  - `active` → `subscriptionStatus = 'active'`
+  - `past_due` → `subscriptionStatus = 'past_due'`
+  - `canceled` / `unpaid` → `subscriptionStatus = 'canceled'`
+  - `trialing` → `subscriptionStatus = 'trialing'`
+  - `incomplete` → `subscriptionStatus = 'incomplete'`
+  - `incomplete_expired` → `subscriptionStatus = 'incomplete_expired'`
+- **Note:** Role stays as `'coach'`
 
 #### `customer.subscription.deleted`
 - Subscription ended
-- **Action:** Update `role` to `'coach_cancelled'`
+- **Action:** Update `subscriptionStatus` to `'canceled'`
+- **Note:** Role stays as `'coach'`
 
 #### `invoice.payment_succeeded`
 - Payment successful (renewal)
-- **Action:** Ensure `role` is `'coach_paid'`
+- **Action:** Update `subscriptionStatus` to `'active'`
+- **Note:** Role stays as `'coach'`
 
 #### `invoice.payment_failed`
 - Payment failed
-- **Action:** Update `role` to `'coach_past_due'`
+- **Action:** Update `subscriptionStatus` to `'past_due'`
+- **Note:** Role stays as `'coach'`
+- **Note:** User gets grace period with limited access
 
 ### 3. App Access Control
 
@@ -65,235 +116,121 @@ Backend must listen for these Stripe webhook events:
 
 When user logs into pbcoach app:
 1. App calls `/auth-me` after authentication
-2. Backend returns user with `role` field
-3. App checks role:
-   - `coach_paid` → Allow full access
-   - `coach_unpaid` → Show "Complete your subscription at schedulecoaches.com"
-   - `coach_cancelled` → Show "Reactivate your subscription at schedulecoaches.com"
-   - `coach_past_due` → Show warning banner, allow read-only access
-   - `admin` → Allow full access
+2. Backend returns user with `role` and `subscriptionStatus` fields
+3. App checks access:
+   - `role === 'admin'` → Allow full access
+   - `role === 'coach' && subscriptionStatus === 'active'` → Allow full access
+   - `role === 'coach' && subscriptionStatus === 'trialing'` → Allow full access
+   - `role === 'coach' && subscriptionStatus === 'past_due'` → Show warning, allow read-only
+   - `role === 'coach' && subscriptionStatus === 'unpaid'` → Show "Complete subscription at schedulecoaches.com"
+   - `role === 'coach' && subscriptionStatus === 'canceled'` → Show "Reactivate subscription at schedulecoaches.com"
+   - `role === 'client'` → Allow booking only (no subscription needed)
 
-## Database Schema Changes
+## Database Schema
 
-### Users Table
-
-Add/modify these columns:
+### Users Table Columns
 
 ```sql
-ALTER TABLE Users ADD stripeCustomerId NVARCHAR(255) NULL;
-ALTER TABLE Users ADD stripeSubscriptionId NVARCHAR(255) NULL;
-ALTER TABLE Users ADD subscriptionStatus NVARCHAR(50) NULL; -- 'active', 'past_due', 'canceled', etc.
-ALTER TABLE Users ADD subscriptionEndDate DATETIME2 NULL;
+-- Role field (what the user IS)
+role NVARCHAR(50) NOT NULL, -- 'client' | 'coach' | 'admin'
+
+-- Subscription fields (payment state)
+stripeCustomerId NVARCHAR(255) NULL,
+stripeSubscriptionId NVARCHAR(255) NULL,
+subscriptionStatus NVARCHAR(50) NULL, -- 'unpaid' | 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete' | 'incomplete_expired'
+subscriptionEndDate DATETIME2 NULL
 ```
 
-### Notes:
-- `role` field determines access (coach_paid, coach_unpaid, etc.)
-- `subscriptionStatus` mirrors Stripe's subscription status for debugging
-- `subscriptionEndDate` helps with grace period logic
+### Filtered Unique Indexes
 
-## Backend Implementation Checklist
+```sql
+-- Prevent duplicate Stripe customer IDs
+CREATE UNIQUE NONCLUSTERED INDEX IX_Users_StripeCustomerId
+    ON Users(stripeCustomerId)
+    WHERE stripeCustomerId IS NOT NULL;
+
+-- Prevent duplicate Stripe subscription IDs
+CREATE UNIQUE NONCLUSTERED INDEX IX_Users_StripeSubscriptionId
+    ON Users(stripeSubscriptionId)
+    WHERE stripeSubscriptionId IS NOT NULL;
+
+-- Index for subscription status queries
+CREATE NONCLUSTERED INDEX IX_Users_SubscriptionStatus
+    ON Users(subscriptionStatus)
+    WHERE subscriptionStatus IS NOT NULL;
+```
+
+## Backend Implementation
 
 ### API Endpoints
 
-- [x] `GET /api/auth-me` - Returns user with role (already exists)
-- [ ] `POST /api/stripe-webhook` - Handle Stripe webhook events
+- [x] `GET /api/auth-me` - Returns user with role and subscriptionStatus
+- [x] `POST /api/webhook` - Handles Stripe webhook events
+- [x] `POST /api/create-checkout-session` - Creates Stripe checkout session
 - [ ] `GET /api/subscription-status` - Check current subscription status (optional)
 - [ ] `POST /api/cancel-subscription` - Allow user to cancel (optional, could use Stripe portal)
 
-### Stripe Webhook Handler
+### Webhook Handler
 
-Create `/api/stripe-webhook` endpoint:
+Location: `api/src/functions/stripeWebhook.ts`
 
-```typescript
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import Stripe from 'stripe';
-import sql from 'mssql';
-import { getConnection } from '../utils/database';
+Key implementation notes:
+- ✅ All event handlers update **ONLY subscriptionStatus**, NOT role
+- ✅ Role field is managed separately (coach/client/admin)
+- ✅ Parameterized SQL queries prevent SQL injection
+- ✅ Comprehensive emoji-prefixed logging
+- ✅ Graceful error handling for missing users
+- ✅ Signature verification with STRIPE_WEBHOOK_SECRET
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+## Migration from Old Pattern
 
-export async function stripeWebhook(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  const sig = request.headers.get('stripe-signature');
-  const body = await request.text();
+**Old Pattern** (v1 - DEPRECATED):
+- Used combined role values: `coach_unpaid`, `coach_paid`, `coach_cancelled`, `coach_past_due`
+- Role and subscription state were conflated
 
-  let event: Stripe.Event;
+**New Pattern** (v2 - CURRENT):
+- Separate `role` and `subscriptionStatus` fields
+- `role` describes what the user IS (`coach`, `client`, `admin`)
+- `subscriptionStatus` describes payment state (`unpaid`, `active`, `canceled`, etc.)
 
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-  } catch (err: any) {
-    return { status: 400, body: `Webhook Error: ${err.message}` };
-  }
+**Migration Path**:
+1. ✅ Update types to use new pattern (`api/src/types/user.ts`)
+2. ✅ Update authMe endpoint to create users with `role='coach'` + `subscriptionStatus='unpaid'`
+3. ✅ Update webhook handlers to only update `subscriptionStatus`
+4. ⏸️ Run database migration to add subscription columns (Phase 6)
+5. ⏸️ Backfill existing users with proper `subscriptionStatus` values
+6. ⏸️ Update pbcoach app to read new fields
 
-  const pool = await getConnection();
-
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session;
-
-      // Find user by email from checkout session
-      const email = session.customer_email;
-
-      await pool.request()
-        .input('email', sql.NVarChar, email)
-        .input('customerId', sql.NVarChar, session.customer)
-        .input('subscriptionId', sql.NVarChar, session.subscription)
-        .query(`
-          UPDATE Users
-          SET role = 'coach_paid',
-              stripeCustomerId = @customerId,
-              stripeSubscriptionId = @subscriptionId,
-              subscriptionStatus = 'active'
-          WHERE LOWER(email) = LOWER(@email)
-        `);
-
-      context.log('✅ Subscription activated for:', email);
-      break;
-    }
-
-    case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription;
-
-      let role = 'coach_unpaid';
-      switch (subscription.status) {
-        case 'active':
-          role = 'coach_paid';
-          break;
-        case 'past_due':
-          role = 'coach_past_due';
-          break;
-        case 'canceled':
-        case 'unpaid':
-          role = 'coach_cancelled';
-          break;
-      }
-
-      await pool.request()
-        .input('subscriptionId', sql.NVarChar, subscription.id)
-        .input('role', sql.NVarChar, role)
-        .input('status', sql.NVarChar, subscription.status)
-        .input('endDate', sql.DateTime2, subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null)
-        .query(`
-          UPDATE Users
-          SET role = @role,
-              subscriptionStatus = @status,
-              subscriptionEndDate = @endDate
-          WHERE stripeSubscriptionId = @subscriptionId
-        `);
-
-      context.log('✅ Subscription updated:', subscription.id, 'Status:', subscription.status);
-      break;
-    }
-
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription;
-
-      await pool.request()
-        .input('subscriptionId', sql.NVarChar, subscription.id)
-        .query(`
-          UPDATE Users
-          SET role = 'coach_cancelled',
-              subscriptionStatus = 'canceled'
-          WHERE stripeSubscriptionId = @subscriptionId
-        `);
-
-      context.log('✅ Subscription cancelled:', subscription.id);
-      break;
-    }
-
-    case 'invoice.payment_succeeded': {
-      const invoice = event.data.object as Stripe.Invoice;
-
-      await pool.request()
-        .input('subscriptionId', sql.NVarChar, invoice.subscription)
-        .query(`
-          UPDATE Users
-          SET role = 'coach_paid',
-              subscriptionStatus = 'active'
-          WHERE stripeSubscriptionId = @subscriptionId
-        `);
-
-      context.log('✅ Payment succeeded for subscription:', invoice.subscription);
-      break;
-    }
-
-    case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice;
-
-      await pool.request()
-        .input('subscriptionId', sql.NVarChar, invoice.subscription)
-        .query(`
-          UPDATE Users
-          SET role = 'coach_past_due',
-              subscriptionStatus = 'past_due'
-          WHERE stripeSubscriptionId = @subscriptionId
-        `);
-
-      context.log('⚠️ Payment failed for subscription:', invoice.subscription);
-      break;
-    }
-  }
-
-  return { status: 200, body: JSON.stringify({ received: true }) };
-}
-```
-
-### Testing Webhooks Locally
-
-1. Install Stripe CLI: `brew install stripe/stripe-brew/stripe`
-2. Login: `stripe login`
-3. Forward webhooks: `stripe listen --forward-to http://localhost:7071/api/stripe-webhook`
-4. Get webhook secret from output and add to `.env`
-5. Test events: `stripe trigger checkout.session.completed`
-
-## Frontend Success Page
-
-After Stripe checkout completes, redirect to `/success` page:
-
-### Success Page Features
-
-- ✅ "Payment Successful!" message
-- ✅ "Your subscription is now active"
-- ✅ App download buttons (App Store + Google Play)
-- ✅ "Login to the app with your credentials" instructions
-- ✅ Support email link
-- ✅ Link to manage subscription (Stripe portal)
-
-## Subscription Management
-
-Users can manage their subscription (update payment method, cancel, etc.) via:
-
-1. **Stripe Customer Portal** (recommended)
-   - Create portal session via API
-   - Redirect user to Stripe-hosted portal
-   - Stripe handles all subscription management
-
-2. **Custom Pages** (more work)
-   - Build UI in schedulecoaches.com
-   - Call Stripe API to update subscription
-   - More control, but more maintenance
-
-**Recommendation:** Use Stripe Customer Portal for simplicity.
+See [PHASE_6_MIGRATION.md](./PHASE_6_MIGRATION.md) for detailed migration plan.
 
 ## Grace Period Logic
 
-For `coach_past_due` role:
+For `subscriptionStatus === 'past_due'`:
 - Allow login to app
 - Show prominent warning banner: "Payment failed. Please update your payment method."
 - Allow read-only access (view clients, view calendar)
 - Block creating new sessions
-- After 7 days past due → Stripe will cancel subscription → role becomes `coach_cancelled`
+- After 7 days past due → Stripe will cancel subscription → `subscriptionStatus` becomes `'canceled'`
 
-## Questions to Resolve
+## Testing Webhooks Locally
 
-1. **Grace period duration?** Default is 7 days, but can be customized in Stripe
-2. **Free trial?** Do we want to offer a free trial period?
-3. **Multiple plans?** Just $20/month, or will there be other pricing tiers?
-4. **Annual billing?** Discount for annual subscriptions?
+1. Install Stripe CLI: `brew install stripe/stripe-brew/stripe`
+2. Login: `stripe login`
+3. Forward webhooks: `stripe listen --forward-to http://localhost:7073/api/webhook`
+4. Get webhook secret from output and add to `.env`
+5. Test events:
+   ```bash
+   stripe trigger checkout.session.completed
+   stripe trigger customer.subscription.updated
+   stripe trigger customer.subscription.deleted
+   stripe trigger invoice.payment_failed
+   stripe trigger invoice.payment_succeeded
+   ```
 
 ## Related Files
 
-- Backend: `/api/stripe-webhook` (needs to be created)
-- Backend: `/api/auth-me` (needs role check logic)
-- Frontend: `/src/views/Success.vue` (needs to be created)
-- Database: Users table schema update
+- Backend Types: `/api/src/types/user.ts`
+- Auth Endpoint: `/api/src/functions/authMe.ts`
+- Webhook Handler: `/api/src/functions/stripeWebhook.ts`
+- Migration Plan: `./PHASE_6_MIGRATION.md`
+- API Implementation Plan: `./schedulecoaches-backend-api-implementation-plan.md`

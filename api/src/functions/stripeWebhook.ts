@@ -109,8 +109,7 @@ export async function stripeWebhook(
 
         const result = await request.query(`
             UPDATE Users
-            SET role = 'coach_paid',
-                stripeCustomerId = @customerId,
+            SET stripeCustomerId = @customerId,
                 stripeSubscriptionId = @subscriptionId,
                 subscriptionStatus = 'active'
             WHERE ${isValidGuid ? 'id = @userId OR' : ''} LOWER(email) = LOWER(@email)
@@ -132,25 +131,14 @@ export async function stripeWebhook(
         const subscription = event.data.object as Stripe.Subscription;
         context.log(`🔄 Processing customer.subscription.updated: ${subscription.id} (status: ${subscription.status})`);
 
-        // Determine role based on subscription status
-        let role = 'coach_unpaid';
-        switch (subscription.status) {
-          case 'active':
-            role = 'coach_paid';
-            break;
-          case 'past_due':
-            role = 'coach_past_due';
-            break;
-          case 'canceled':
-          case 'unpaid':
-            role = 'coach_cancelled';
-            break;
-          case 'incomplete':
-          case 'incomplete_expired':
-          case 'trialing':
-            // Keep as coach_unpaid for incomplete/trial states
-            role = 'coach_unpaid';
-            break;
+        // Map Stripe subscription status to our subscriptionStatus values
+        let subscriptionStatus: string = subscription.status;
+
+        // Normalize Stripe status values to our schema
+        if (subscription.status === 'canceled') {
+          subscriptionStatus = 'canceled';
+        } else if (subscription.status === 'unpaid') {
+          subscriptionStatus = 'canceled'; // Treat unpaid as canceled
         }
 
         const endDate = subscription.current_period_end
@@ -159,13 +147,11 @@ export async function stripeWebhook(
 
         const result = await pool.request()
           .input('subscriptionId', sql.NVarChar, subscription.id)
-          .input('role', sql.NVarChar, role)
-          .input('status', sql.NVarChar, subscription.status)
+          .input('status', sql.NVarChar, subscriptionStatus)
           .input('endDate', sql.DateTime2, endDate)
           .query(`
             UPDATE Users
-            SET role = @role,
-                subscriptionStatus = @status,
+            SET subscriptionStatus = @status,
                 subscriptionEndDate = @endDate
             WHERE stripeSubscriptionId = @subscriptionId
           `);
@@ -173,7 +159,7 @@ export async function stripeWebhook(
         if (result.rowsAffected[0] === 0) {
           context.warn(`⚠️ No user found with subscription ID: ${subscription.id}`);
         } else {
-          context.log(`✅ Subscription updated: ${subscription.id} → role: ${role}, status: ${subscription.status}, endDate: ${endDate?.toISOString()}`);
+          context.log(`✅ Subscription updated: ${subscription.id} → status: ${subscriptionStatus}, endDate: ${endDate?.toISOString()}`);
         }
         break;
       }
@@ -186,15 +172,14 @@ export async function stripeWebhook(
           .input('subscriptionId', sql.NVarChar, subscription.id)
           .query(`
             UPDATE Users
-            SET role = 'coach_cancelled',
-                subscriptionStatus = 'canceled'
+            SET subscriptionStatus = 'canceled'
             WHERE stripeSubscriptionId = @subscriptionId
           `);
 
         if (result.rowsAffected[0] === 0) {
           context.warn(`⚠️ No user found with subscription ID: ${subscription.id}`);
         } else {
-          context.log(`✅ Subscription cancelled: ${subscription.id} → role: coach_cancelled`);
+          context.log(`✅ Subscription cancelled: ${subscription.id} → status: canceled`);
         }
         break;
       }
@@ -213,15 +198,14 @@ export async function stripeWebhook(
           .input('subscriptionId', sql.NVarChar, subscriptionId)
           .query(`
             UPDATE Users
-            SET role = 'coach_paid',
-                subscriptionStatus = 'active'
+            SET subscriptionStatus = 'active'
             WHERE stripeSubscriptionId = @subscriptionId
           `);
 
         if (result.rowsAffected[0] === 0) {
           context.warn(`⚠️ No user found with subscription ID: ${subscriptionId}`);
         } else {
-          context.log(`✅ Payment succeeded for subscription: ${subscriptionId} → role: coach_paid`);
+          context.log(`✅ Payment succeeded for subscription: ${subscriptionId} → status: active`);
         }
         break;
       }
@@ -240,15 +224,14 @@ export async function stripeWebhook(
           .input('subscriptionId', sql.NVarChar, subscriptionId)
           .query(`
             UPDATE Users
-            SET role = 'coach_past_due',
-                subscriptionStatus = 'past_due'
+            SET subscriptionStatus = 'past_due'
             WHERE stripeSubscriptionId = @subscriptionId
           `);
 
         if (result.rowsAffected[0] === 0) {
           context.warn(`⚠️ No user found with subscription ID: ${subscriptionId}`);
         } else {
-          context.log(`⚠️ Payment failed for subscription: ${subscriptionId} → role: coach_past_due`);
+          context.log(`⚠️ Payment failed for subscription: ${subscriptionId} → status: past_due`);
         }
         break;
       }

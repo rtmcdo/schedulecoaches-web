@@ -139,8 +139,9 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
         if (!dbUser) {
             context.log('[authMe] User not found, creating new stub account:', user.email);
             const newUserId = crypto.randomUUID();
-            const role = isAdmin ? 'admin' : 'coach_unpaid';
-            context.log('[authMe] Assigning role:', role, '(isAdmin:', isAdmin, ')');
+            const role = isAdmin ? 'admin' : 'coach';
+            const subscriptionStatus = isAdmin ? 'active' : 'unpaid'; // Admins always active, coaches start unpaid
+            context.log('[authMe] Assigning role:', role, 'subscriptionStatus:', subscriptionStatus, '(isAdmin:', isAdmin, ')');
 
             const entraAccountId = provider === 'entra' ? accountId : null;
             const googleAccountId = provider === 'google' ? accountId : null;
@@ -162,6 +163,7 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
                     .input('firstName', sql.NVarChar, normalizedFirstName)
                     .input('lastName', sql.NVarChar, normalizedLastName)
                     .input('role', sql.NVarChar, role)
+                    .input('subscriptionStatus', sql.NVarChar, subscriptionStatus)
                     .query(`
                         INSERT INTO Users (
                             id,
@@ -174,6 +176,7 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
                             firstName,
                             lastName,
                             role,
+                            subscriptionStatus,
                             isActive,
                             createdAt
                         )
@@ -188,6 +191,7 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
                             @firstName,
                             @lastName,
                             @role,
+                            @subscriptionStatus,
                             1,
                             GETUTCDATE()
                         WHERE NOT EXISTS (
@@ -291,15 +295,17 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
         }
         // Downgrade from admin if no longer in admin group
         else if (!isAdmin && dbUser.role === 'admin') {
-            context.log('[authMe] Downgrading user from admin to coach_unpaid - no longer in admin group:', dbUser.email);
+            context.log('[authMe] Downgrading user from admin to coach - no longer in admin group:', dbUser.email);
             await pool.request()
                 .input('userId', sql.UniqueIdentifier, dbUser.id)
                 .query(`
                     UPDATE Users
-                    SET role = 'coach_unpaid'
+                    SET role = 'coach',
+                        subscriptionStatus = COALESCE(subscriptionStatus, 'unpaid')
                     WHERE id = @userId
                 `);
-            dbUser.role = 'coach_unpaid';
+            dbUser.role = 'coach';
+            dbUser.subscriptionStatus = dbUser.subscriptionStatus || 'unpaid';
         }
 
         // Refresh first/last name if missing in database
@@ -329,9 +335,11 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
         }
 
         // Determine if user needs to complete profile or payment
-        const needsProfileCompletion = !dbUser.stripeCustomerId && dbUser.role === 'coach_unpaid';
-        const hasActiveSubscription = dbUser.subscriptionStatus === 'active' &&
-                                       (dbUser.role === 'coach_paid' || dbUser.role === 'admin');
+        const needsProfileCompletion = !dbUser.stripeCustomerId &&
+                                       dbUser.role === 'coach' &&
+                                       dbUser.subscriptionStatus === 'unpaid';
+        const hasActiveSubscription = dbUser.subscriptionStatus === 'active' ||
+                                       dbUser.role === 'admin';
 
         // Return user with subscription status
         context.log('[authMe] Returning user with role:', dbUser.role, 'for email:', dbUser.email);
