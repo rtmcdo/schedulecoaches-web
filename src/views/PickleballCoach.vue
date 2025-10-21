@@ -13,8 +13,8 @@ const dashboardFeatures = [
 
 const calendarFeatures = [
   { text: 'Intuitive one-day, three-day, five-day, seven-day and monthly calendar views' },
-  { text: 'Drag-and-drop appointment scheduling' },
   { text: 'Set recurring availability patterns' },
+  { text: 'Dynamic scheduling system supporting multiple teaching locations' },
   { text: 'Color coding for easy identification of differnt activity types' }
 ]
 
