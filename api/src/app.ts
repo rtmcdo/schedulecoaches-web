@@ -2,6 +2,7 @@ import { app } from '@azure/functions';
 
 // Import all function handlers
 import './functions/health';
+import './functions/authMe';
 
 // Stripe endpoints (JavaScript - will be migrated to TypeScript in Phase 4 & 5)
 import './functions.js';
