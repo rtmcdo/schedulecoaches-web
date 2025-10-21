@@ -409,10 +409,13 @@ Run migration during low-traffic window - PENDING
   ```
 
 - **Backfill Strategy**:
-  - Coaches (`role='coach'`) → `subscriptionStatus='unpaid'`
-  - Admins (`role='admin'`) → `subscriptionStatus='active'`
-  - Clients (`role='client'`) → `subscriptionStatus=NULL` (don't need subscriptions)
-  - Legacy mobile coaches → `subscriptionStatus='unpaid'` (must complete signup)
+  - **Existing coaches** (demo/employee accounts) → `subscriptionStatus='free'`
+    - Includes old role values: `coach_paid`, `coach_cancelled`, `coach_past_due`, `coach_unpaid`
+    - Includes new role value: `coach`
+    - All existing coaches get full access without requiring Stripe subscription
+  - **Admins** (`role='admin'`) → `subscriptionStatus='active'`
+  - **Clients** (`role='client'`) → `subscriptionStatus=NULL` (don't need subscriptions)
+  - **New schedulecoaches.com signups** → `subscriptionStatus='unpaid'` (must complete payment)
 
 - **Coordination with pbcoach**:
   - ✅ No column name conflicts
@@ -429,6 +432,17 @@ Run migration during low-traffic window - PENDING
   - 5-second pause before rollback (allows cancellation)
   - Comprehensive verification queries after completion
   - Rollback script available if needed
+
+- **Key Updates**:
+  - **'free' Subscription Status Added** (commit db87ace):
+    - New status for demo/employee accounts that don't require Stripe subscriptions
+    - Grants full app access without payment
+    - All existing coaches backfilled as 'free' (since they are demo/employee accounts)
+    - New schedulecoaches.com signups still get 'unpaid' status
+  - **Critical Bug Fix** (commit db87ace):
+    - Fixed backfill to handle old role values (coach_paid, coach_cancelled, etc.)
+    - Migration now checks for ALL coach role variants, not just 'coach'
+    - Prevents existing coaches from losing access due to NULL subscriptionStatus
 
 - **Post-Migration Monitoring**:
   - Daily verification checks for first week
