@@ -336,9 +336,9 @@ stripe trigger invoice.payment_failed
 
 ## Phase 6: Database Schema Updates
 **Target**: Add subscription tracking columns to Users table
-**Status**: 🟢 Complete (Scripts Ready)
+**Status**: 🟢 Complete (Executed in Production)
 **Estimated Duration**: 1 hour
-**Actual Duration**: 1 hour (script creation)
+**Actual Duration**: 1.5 hours (script creation + execution)
 **Completed**: 2025-10-21
 
 ### Tasks
@@ -348,11 +348,11 @@ stripe trigger invoice.payment_failed
   - [x] Add subscriptionStatus NVARCHAR(50)
   - [x] Add subscriptionEndDate DATETIME2
 - [x] Create filtered unique indexes (prevent duplicate Stripe IDs)
-- [x] Create backfill strategy (coaches→unpaid, admins→active)
+- [x] Create backfill strategy (coaches→free, admins→active)
 - [x] Document rollback procedure
 - [x] Create verification queries
 - [x] Coordinate with pbcoach schema alignment
-- [⏸️] Execute migration on database (requires database access)
+- [x] Execute migration on database (completed on pbcoach-db)
 
 ### Acceptance Criteria
 - ✅ Migration scripts created in /api/migrations folder
@@ -362,7 +362,7 @@ stripe trigger invoice.payment_failed
 - ✅ Rollback procedure documented
 - ✅ Verification queries created
 - ✅ Coordination with pbcoach verified (no conflicts)
-- ⏸️ Migration execution pending (requires database credentials)
+- ✅ Migration executed successfully on production (pbcoach-db)
 
 ### Notes
 ```
@@ -450,12 +450,29 @@ Run migration during low-traffic window - PENDING
   - Check for users stuck in 'unpaid' status with payment completed
   - Alert on duplicate Stripe IDs (shouldn't happen due to indexes)
 
+- **Migration Execution** (Production):
+  - **Date**: 2025-10-21
+  - **Database**: pbcoach-db (production)
+  - **Script Used**: `001_add_subscription_columns_go.sql` (GO batches version)
+  - **Result**: ✅ Successful
+  - **Users Updated**:
+    - 6 coaches → `subscriptionStatus='free'` (demo/employee accounts)
+    - 1 admin → `subscriptionStatus='active'`
+    - 71 clients → `subscriptionStatus=NULL` (no subscription needed)
+  - **Verification**: All checks passed (no duplicates, all columns exist, all indexes created)
+
+- **Technical Notes**:
+  - Original transaction-based script failed with sqlcmd due to batch compilation issues
+  - Solution: Created GO-separated version for sqlcmd compatibility
+  - Trade-off: Lost transactional safety, but each step is idempotent
+  - Successful execution on first attempt
+
 - **Next Steps**:
-  1. ⏸️ Schedule migration execution during low-traffic window
-  2. ⏸️ Notify pbcoach team before running
-  3. ⏸️ Run migration: `001_add_subscription_columns.sql`
-  4. ⏸️ Verify results: `001_verify_subscription_columns.sql`
-  5. ⏸️ Update pbcoach app types to include new fields
+  1. ✅ Migration executed successfully
+  2. ✅ Verification checks passed
+  3. ⏸️ Monitor Stripe webhook logs for any errors
+  4. ⏸️ Update pbcoach app types to include new fields
+  5. ⏸️ Notify pbcoach team that subscription columns are available
 
 - **Related Documentation**:
   - Detailed plan: `/documentation/PHASE_6_MIGRATION.md`
@@ -647,7 +664,7 @@ Monitor for first few days after launch
 **Total Phases**: 11
 **Estimated Total Duration**: 3-5 days
 **Current Phase**: Phase 7 (Subscription Status Endpoint)
-**Overall Progress**: 55% (6/11 phases)
+**Overall Progress**: 55% (6/11 phases complete, Phase 6 executed in production)
 **Last Updated**: 2025-10-21
 
 ### Phase Status Legend
@@ -690,7 +707,7 @@ Monitor for first few days after launch
 
 ---
 
-**Next Action**: Execute Phase 6 migration (001_add_subscription_columns.sql), then begin Phase 7 - Subscription Status Endpoint
+**Next Action**: Begin Phase 7 - Subscription Status Endpoint (Phase 6 migration complete and executed in production)
 
 ---
 
