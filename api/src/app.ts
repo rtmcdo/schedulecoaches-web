@@ -5,6 +5,7 @@ import './functions/health';
 import './functions/authMe';
 import './functions/createCheckoutSession';
 import './functions/stripeWebhook';
+import './functions/subscriptionStatus';
 
 // Stripe billing portal endpoint (JavaScript - will be migrated in future phase)
 import './functions.js';
