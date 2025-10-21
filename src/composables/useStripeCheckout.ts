@@ -1,16 +1,37 @@
 import { ref } from 'vue'
-import { useAuth } from './useAuth'
+import { useRouter } from 'vue-router'
+import { useEntraAuth } from './useEntraAuth'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071/api'
 
 export function useStripeCheckout() {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
-  const { user, requireAuth } = useAuth()
+  const router = useRouter()
+  const { currentUser, checkAuth, getAccessToken } = useEntraAuth()
+
+  const ensureAuthenticatedUser = async (): Promise<boolean> => {
+    if (currentUser.value) {
+      return true
+    }
+
+    try {
+      const authenticated = await checkAuth()
+      if (authenticated && currentUser.value) {
+        return true
+      }
+    } catch (err) {
+      console.error('[Stripe Checkout] Failed to verify authentication status:', err)
+    }
+
+    router.push('/sign-up')
+    return false
+  }
 
   const createCheckoutSession = async (lookupKey: string, referralCode?: string) => {
     // Require authentication before checkout
-    if (!requireAuth()) {
+    const hasUser = await ensureAuthenticatedUser()
+    if (!hasUser) {
       return
     }
 
@@ -18,17 +39,24 @@ export function useStripeCheckout() {
     error.value = null
 
     try {
+      const token = await getAccessToken()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
+
       const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           lookup_key: lookupKey,
           referral_code: referralCode,
-          customer_email: user.value?.email,
+          customer_email: currentUser.value?.email,
           metadata: {
-            user_id: user.value?.id,
+            user_id: currentUser.value?.id,
           },
         }),
       })
@@ -58,11 +86,18 @@ export function useStripeCheckout() {
     error.value = null
 
     try {
+      const token = await getAccessToken()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
+
       const response = await fetch(`${API_BASE_URL}/create-portal-session`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           session_id: sessionId,
         }),

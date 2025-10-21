@@ -58,6 +58,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/TermsOfService.vue')
   },
   {
+    path: '/checkout-cancel',
+    name: 'CheckoutCancel',
+    component: () => import('@/views/CheckoutCancel.vue')
+  },
+  {
     path: '/checkout-success',
     name: 'CheckoutSuccess',
     component: () => import('@/views/CheckoutSuccess.vue')

@@ -12,16 +12,16 @@ const dashboardFeatures = [
 ]
 
 const calendarFeatures = [
-  { text: 'Intuitive weekly and monthly calendar views' },
+  { text: 'Intuitive one-day, three-day, five-day, seven-day and monthly calendar views' },
   { text: 'Drag-and-drop appointment scheduling' },
   { text: 'Set recurring availability patterns' },
-  { text: 'Sync with your device calendar' }
+  { text: 'Color coding for easy identification of differnt activity types' }
 ]
 
 const clientFeatures = [
   { text: 'Maintain detailed client profiles and contact info' },
   { text: 'Track session history and progress notes' },
-  { text: 'Monitor client packages and remaining sessions' },
+  { text: 'Capture metadata about clients for marketing outreach' },
   { text: 'Send automated reminders via SMS and email' }
 ]
 

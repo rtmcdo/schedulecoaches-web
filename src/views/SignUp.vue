@@ -4,32 +4,18 @@ import { useEntraAuth } from '@/composables/useEntraAuth'
 
 const { signUpWithEmail, signUpWithGoogle, signUpWithApple } = useEntraAuth()
 
-const email = ref('')
 const error = ref('')
 const isLoading = ref(false)
 
 const handleEmailSignUp = async () => {
-  if (!email.value) {
-    error.value = 'Please enter your email address'
-    return
-  }
-
-  // Basic email validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email.value)) {
-    error.value = 'Please enter a valid email address'
-    return
-  }
-
   error.value = ''
   isLoading.value = true
 
   try {
-    // This will:
-    // 1. Create Entra ID account (or sign in if exists)
-    // 2. Create user in our database via authMe endpoint
-    // 3. Redirect to Stripe checkout
-    await signUpWithEmail(email.value)
+    // Redirect directly to Entra's hosted create account page
+    // User will enter email there, not on our page
+    await signUpWithEmail()
+    // User will be redirected to Entra, so this code won't execute
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
     isLoading.value = false
@@ -162,34 +148,25 @@ const handleAppleSignUp = async () => {
           </div>
         </div>
 
-        <!-- Email Form -->
-        <form @submit.prevent="handleEmailSignUp" class="space-y-4">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email address</label>
-            <input
-              id="email"
-              v-model="email"
-              type="email"
-              autocomplete="email"
-              required
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="you@example.com"
-            />
-          </div>
+        <!-- Email Button (redirects to Entra) -->
+        <div class="space-y-4">
+          <button
+            @click="handleEmailSignUp"
+            type="button"
+            :disabled="isLoading"
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-primary-600 text-primary-600 rounded-lg font-semibold hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <span v-if="!isLoading">Continue with Email</span>
+            <span v-else>Redirecting...</span>
+          </button>
 
           <div v-if="error" class="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
             {{ error }}
           </div>
-
-          <button
-            type="submit"
-            :disabled="isLoading"
-            class="w-full bg-gradient-to-r from-primary-600 to-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-primary-700 hover:to-blue-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span v-if="!isLoading">Continue to Payment</span>
-            <span v-else>Processing...</span>
-          </button>
-        </form>
+        </div>
 
         <!-- Fine Print -->
         <p class="text-xs text-gray-500 text-center mt-6">

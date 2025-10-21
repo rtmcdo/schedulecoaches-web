@@ -1,44 +1,60 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useEntraAuth } from '@/composables/useEntraAuth'
 
 const router = useRouter()
+const {
+  login,
+  loginWithGoogle,
+  loginWithApple,
+  isLoading: authLoading,
+  error: authError
+} = useEntraAuth()
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
-const error = ref('')
+const localError = ref('')
+
+const isProcessing = computed(() => authLoading.value)
+const displayError = computed(() => localError.value || authError.value || '')
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
-    error.value = 'Please enter your email and password'
+    localError.value = 'Please enter your email and password'
     return
   }
 
-  error.value = ''
-  isLoading.value = true
+  localError.value = ''
 
   try {
-    // TODO: Implement actual login logic
-    // For now, simulate login and redirect to account management
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    // This should verify credentials and get user session
-    // Then redirect to account management page
-    router.push('/account')
+    await login(email.value)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Login failed. Please try again.'
-    isLoading.value = false
+    localError.value = err instanceof Error ? err.message : 'Login failed. Please try again.'
   }
 }
 
-const handleGoogleLogin = () => {
-  // TODO: Implement Google OAuth login
-  console.log('Google login clicked')
+const handleGoogleLogin = async () => {
+  localError.value = ''
+  try {
+    const result = await loginWithGoogle()
+    if (result === 'login_success') {
+      router.push('/account')
+    }
+  } catch (err) {
+    localError.value = err instanceof Error ? err.message : 'Google login failed. Please try again.'
+  }
 }
 
-const handleAppleLogin = () => {
-  // TODO: Implement Apple login
-  console.log('Apple login clicked')
+const handleAppleLogin = async () => {
+  localError.value = ''
+  try {
+    const result = await loginWithApple()
+    if (result === 'login_success') {
+      router.push('/account')
+    }
+  } catch (err) {
+    localError.value = err instanceof Error ? err.message : 'Apple login failed. Please try again.'
+  }
 }
 
 const handleForgotPassword = () => {
@@ -146,16 +162,16 @@ const handleForgotPassword = () => {
             </button>
           </div>
 
-          <div v-if="error" class="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-            {{ error }}
+          <div v-if="displayError" class="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+            {{ displayError }}
           </div>
 
           <button
             type="submit"
-            :disabled="isLoading"
+            :disabled="isProcessing"
             class="w-full bg-gradient-to-r from-primary-600 to-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-primary-700 hover:to-blue-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span v-if="!isLoading">Sign In</span>
+            <span v-if="!isProcessing">Sign In</span>
             <span v-else>Signing in...</span>
           </button>
         </form>

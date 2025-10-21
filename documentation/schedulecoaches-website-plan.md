@@ -1,10 +1,15 @@
 # ScheduleCoaches.com Marketing Website - Implementation Plan
 
 **Created**: 2025-10-17
-**Last Updated**: 2025-10-18
-**Feature**: Public-facing marketing website for Pickleball Coach and Tennis Coach apps
+**Last Updated**: 2025-10-20
+**Feature**: Public-facing marketing website and subscription platform for pbcoach mobile app
 **Status**: 🟡 In Progress - Phase 4 Complete
-**Approach**: Build a Vue.js static website with Tailwind CSS, mirroring Pickleball Journal's clean design, integrating Stripe subscriptions with referral tracking, and deploying to Azure Static Web Apps
+**Approach**: Build a Vue.js static website with Tailwind CSS and Azure Static Web Apps managed functions for backend API, integrating Entra ID authentication and Stripe subscriptions
+
+**Related Documentation:**
+- [Backend API Implementation Plan](./schedulecoaches-backend-api-implementation-plan.md) - Detailed backend architecture (11 phases)
+- [Subscription Status Tracking](./SUBSCRIPTION_STATUS.md) - User roles and subscription lifecycle
+- [Project Guidelines](./.claude/claude.md) - Development restrictions and configuration
 
 ---
 
