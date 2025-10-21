@@ -25,10 +25,11 @@ Aligns with pbcoach schema:
 
 ### 2. `subscriptionStatus` Field (Payment state)
 
-Tracks Stripe subscription state:
+Tracks subscription/payment state:
 
 | Status | Description | Can Use App? |
 |--------|-------------|--------------|
+| `free` | Free/exempt account (demo, employee, partner) - no Stripe required | ✅ Yes |
 | `unpaid` | Account created, no payment yet | ❌ No |
 | `active` | Active subscription, payment current | ✅ Yes |
 | `canceled` | Subscription cancelled | ❌ No |
@@ -45,11 +46,12 @@ function canAccessApp(user: User): boolean {
   // Admins always have access
   if (user.role === 'admin') return true;
 
-  // Coaches need active subscription
+  // Coaches need active subscription or free access
   if (user.role === 'coach') {
-    return user.subscriptionStatus === 'active' ||
-           user.subscriptionStatus === 'trialing' ||
-           user.subscriptionStatus === 'past_due'; // Read-only during grace period
+    return user.subscriptionStatus === 'free' ||    // Demo/employee accounts
+           user.subscriptionStatus === 'active' ||   // Paying customers
+           user.subscriptionStatus === 'trialing' || // Free trial
+           user.subscriptionStatus === 'past_due';   // Grace period (read-only)
   }
 
   // Clients don't need subscriptions (they book, not provide coaching)
@@ -119,6 +121,7 @@ When user logs into pbcoach app:
 2. Backend returns user with `role` and `subscriptionStatus` fields
 3. App checks access:
    - `role === 'admin'` → Allow full access
+   - `role === 'coach' && subscriptionStatus === 'free'` → Allow full access (demo/employee)
    - `role === 'coach' && subscriptionStatus === 'active'` → Allow full access
    - `role === 'coach' && subscriptionStatus === 'trialing'` → Allow full access
    - `role === 'coach' && subscriptionStatus === 'past_due'` → Show warning, allow read-only
@@ -137,7 +140,7 @@ role NVARCHAR(50) NOT NULL, -- 'client' | 'coach' | 'admin'
 -- Subscription fields (payment state)
 stripeCustomerId NVARCHAR(255) NULL,
 stripeSubscriptionId NVARCHAR(255) NULL,
-subscriptionStatus NVARCHAR(50) NULL, -- 'unpaid' | 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete' | 'incomplete_expired'
+subscriptionStatus NVARCHAR(50) NULL, -- 'free' | 'unpaid' | 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete' | 'incomplete_expired'
 subscriptionEndDate DATETIME2 NULL
 ```
 

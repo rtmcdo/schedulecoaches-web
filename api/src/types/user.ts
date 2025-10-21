@@ -9,6 +9,7 @@
  * - admin: System administrator (always has access)
  *
  * Subscription status values (tracked separately from role):
+ * - free: Free/exempt account (demo, employee, partner) - full access, no Stripe required
  * - unpaid: Account created, no payment yet (cannot access app)
  * - active: Active subscription, full app access
  * - canceled: Subscription cancelled (cannot access app)
@@ -28,10 +29,10 @@ export interface User {
   slug?: string; // URL-friendly identifier
   profilePhotoUrl?: string;
 
-  // Stripe subscription fields (required for coaches from schedulecoaches.com)
+  // Stripe subscription fields (optional for 'free' coaches, required for paying coaches)
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
-  subscriptionStatus: 'unpaid' | 'active' | 'past_due' | 'canceled' | 'trialing' | 'incomplete' | 'incomplete_expired';
+  subscriptionStatus: 'free' | 'unpaid' | 'active' | 'past_due' | 'canceled' | 'trialing' | 'incomplete' | 'incomplete_expired';
   subscriptionEndDate?: Date;
 
   // Entra ID account reference

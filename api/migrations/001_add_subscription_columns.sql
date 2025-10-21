@@ -68,15 +68,19 @@ BEGIN TRY
     PRINT '✅ Columns added successfully';
     PRINT '';
 
-    -- Step 2: Backfill coaches
-    PRINT 'Step 2: Backfilling subscriptionStatus for coaches...';
+    -- Step 2: Backfill coaches (existing = free/demo accounts, new will be unpaid)
+    PRINT 'Step 2: Backfilling subscriptionStatus for existing coaches...';
     DECLARE @coachCount INT;
+
+    -- Existing coaches are demo/employee accounts - mark as 'free'
+    -- This includes coaches with old role values (coach_paid, coach_cancelled, etc.)
     UPDATE Users
-    SET subscriptionStatus = 'unpaid'
-    WHERE role = 'coach'
+    SET subscriptionStatus = 'free'
+    WHERE role IN ('coach', 'coach_paid', 'coach_cancelled', 'coach_past_due', 'coach_unpaid')
       AND subscriptionStatus IS NULL;
     SET @coachCount = @@ROWCOUNT;
-    PRINT '✅ Updated ' + CAST(@coachCount AS VARCHAR) + ' coach users to subscriptionStatus=unpaid';
+    PRINT '✅ Updated ' + CAST(@coachCount AS VARCHAR) + ' existing coach users to subscriptionStatus=free';
+    PRINT '   (These are demo/employee accounts with free access)';
     PRINT '';
 
     -- Step 3: Backfill admins

@@ -30,9 +30,10 @@ Add subscription tracking columns to the Users table to support Stripe payment p
    - `subscriptionEndDate` DATETIME2 NULL
 
 2. Backfills existing users:
-   - Coaches → `subscriptionStatus = 'unpaid'`
+   - Existing coaches → `subscriptionStatus = 'free'` (demo/employee accounts with free access)
    - Admins → `subscriptionStatus = 'active'`
    - Clients → `subscriptionStatus = NULL` (don't need subscriptions)
+   - **Note**: New coaches signing up via schedulecoaches.com will get `subscriptionStatus = 'unpaid'`
 
 3. Creates filtered unique indexes:
    - `IX_Users_StripeCustomerId` (prevents duplicate customer IDs)

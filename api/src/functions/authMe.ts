@@ -339,6 +339,8 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
                                        dbUser.role === 'coach' &&
                                        dbUser.subscriptionStatus === 'unpaid';
         const hasActiveSubscription = dbUser.subscriptionStatus === 'active' ||
+                                       dbUser.subscriptionStatus === 'free' ||
+                                       dbUser.subscriptionStatus === 'trialing' ||
                                        dbUser.role === 'admin';
 
         // Return user with subscription status

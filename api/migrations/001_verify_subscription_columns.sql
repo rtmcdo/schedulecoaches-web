@@ -87,7 +87,7 @@ PRINT '-----------------';
 DECLARE @coachesWithoutStatus INT;
 SELECT @coachesWithoutStatus = COUNT(*)
 FROM Users
-WHERE role = 'coach'
+WHERE role IN ('coach', 'coach_paid', 'coach_cancelled', 'coach_past_due', 'coach_unpaid')
   AND subscriptionStatus IS NULL;
 
 IF @coachesWithoutStatus = 0
@@ -197,18 +197,28 @@ WHERE stripeSubscriptionId IS NOT NULL
 IF @inconsistent2 > 0
     PRINT '  ⚠️ ' + CAST(@inconsistent2 AS VARCHAR) + ' users have subscription ID but no customer ID';
 
--- Coaches with Stripe data but unpaid status
+-- Coaches with Stripe data but unpaid status (may indicate webhook failure)
 DECLARE @inconsistent3 INT;
 SELECT @inconsistent3 = COUNT(*)
 FROM Users
-WHERE role = 'coach'
+WHERE role IN ('coach', 'coach_paid', 'coach_cancelled', 'coach_past_due', 'coach_unpaid')
   AND stripeCustomerId IS NOT NULL
   AND subscriptionStatus = 'unpaid';
 
 IF @inconsistent3 > 0
     PRINT '  ⚠️ ' + CAST(@inconsistent3 AS VARCHAR) + ' coaches have customer ID but are still unpaid (may indicate webhook failure)';
 
-IF @inconsistent1 = 0 AND @inconsistent2 = 0 AND @inconsistent3 = 0
+-- Free accounts should not have Stripe data
+DECLARE @inconsistent4 INT;
+SELECT @inconsistent4 = COUNT(*)
+FROM Users
+WHERE subscriptionStatus = 'free'
+  AND (stripeCustomerId IS NOT NULL OR stripeSubscriptionId IS NOT NULL);
+
+IF @inconsistent4 > 0
+    PRINT '  ⚠️ ' + CAST(@inconsistent4 AS VARCHAR) + ' free accounts have Stripe data (should be NULL for free accounts)';
+
+IF @inconsistent1 = 0 AND @inconsistent2 = 0 AND @inconsistent3 = 0 AND @inconsistent4 = 0
     PRINT '  ✅ No data inconsistencies found';
 
 PRINT '';
