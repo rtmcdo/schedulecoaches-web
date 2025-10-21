@@ -2,6 +2,10 @@
 import { RouterLink } from 'vue-router'
 
 const currentYear = new Date().getFullYear()
+// Build ID for debugging - updated manually per commit
+// In production, this would be injected by CI/CD
+const buildId = '49f7551' // Current git commit hash
+const buildDate = '2025-10-21'
 </script>
 
 <template>
@@ -104,6 +108,9 @@ const currentYear = new Date().getFullYear()
     <!-- Copyright -->
     <div class="mt-8 text-center text-gray-600 px-6">
       <p>Copyright &copy; {{ currentYear }} JRM Software LLC. All rights reserved.</p>
+      <p class="text-xs text-gray-400 mt-2">
+        Build: {{ buildId }} ({{ buildDate }})
+      </p>
     </div>
   </footer>
 </template>
