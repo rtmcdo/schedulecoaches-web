@@ -100,16 +100,19 @@ export async function subscriptionStatusHandler(request: HttpRequest, context: I
         }
 
         // Determine subscription flags
+        // Note: Base all flags on subscriptionStatus, not role
+        // The database still has old role values (coach_paid, coach_cancelled, etc.)
         const hasActiveSubscription = dbUser.subscriptionStatus === 'active' ||
                                        dbUser.subscriptionStatus === 'free' ||
                                        dbUser.subscriptionStatus === 'trialing' ||
                                        dbUser.role === 'admin';
 
-        const needsPayment = dbUser.role === 'coach' &&
-                            (dbUser.subscriptionStatus === 'unpaid' ||
-                             dbUser.subscriptionStatus === 'canceled' ||
-                             dbUser.subscriptionStatus === 'incomplete' ||
-                             dbUser.subscriptionStatus === 'incomplete_expired');
+        // Check subscriptionStatus directly - don't filter by role
+        // Clients have NULL subscriptionStatus so they won't match these conditions
+        const needsPayment = dbUser.subscriptionStatus === 'unpaid' ||
+                            dbUser.subscriptionStatus === 'canceled' ||
+                            dbUser.subscriptionStatus === 'incomplete' ||
+                            dbUser.subscriptionStatus === 'incomplete_expired';
 
         const isInGracePeriod = dbUser.subscriptionStatus === 'past_due';
 

@@ -335,8 +335,9 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
         }
 
         // Determine if user needs to complete profile or payment
+        // Note: Base on subscriptionStatus, not role (database has old role values like coach_paid)
+        // Clients have NULL subscriptionStatus so won't match; admins have 'active' not 'unpaid'
         const needsProfileCompletion = !dbUser.stripeCustomerId &&
-                                       dbUser.role === 'coach' &&
                                        dbUser.subscriptionStatus === 'unpaid';
         const hasActiveSubscription = dbUser.subscriptionStatus === 'active' ||
                                        dbUser.subscriptionStatus === 'free' ||
