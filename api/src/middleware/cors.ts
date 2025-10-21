@@ -60,7 +60,8 @@ export function isAllowedOrigin(request: HttpRequest): boolean {
 
 /**
  * Get CORS headers for response
- * If origin is allowed, return it specifically (instead of *)
+ * If origin is allowed, return it specifically
+ * If origin is NOT allowed, do NOT include Access-Control-Allow-Origin header
  */
 export function getCorsHeaders(request: HttpRequest): Record<string, string> {
     const origin = request.headers.get('origin');
@@ -72,7 +73,10 @@ export function getCorsHeaders(request: HttpRequest): Record<string, string> {
         };
     }
 
-    return corsHeaders;
+    // For requests without origin header (same-origin or non-browser)
+    // or disallowed origins, return headers WITHOUT Access-Control-Allow-Origin
+    const { 'Access-Control-Allow-Origin': _, ...headersWithoutOrigin } = corsHeaders;
+    return headersWithoutOrigin;
 }
 
 /**

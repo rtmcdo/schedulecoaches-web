@@ -118,10 +118,14 @@ Connection string should point to same database as pbcoach
 - **User types**: Added subscription-specific fields (stripeCustomerId, stripeSubscriptionId, subscriptionStatus, subscriptionEndDate)
 - **User roles**: Defined 5 role types (coach_unpaid, coach_paid, coach_cancelled, coach_past_due, admin)
 - **Database connection**: Uses SQL_CONNECTION_STRING format, parses connection string into config
-- **Auth config**: Production Entra tenant (pickleballcoach.onmicrosoft.com), supports Google and Apple Sign-In
-- **Token verification**: Auto-detects issuer (Entra/Google/Apple) and routes to appropriate verification
+- **Auth config**: Production Entra tenant (pickleballcoach.onmicrosoft.com), supports Google Sign-In
+- **Token verification**: Auto-detects issuer (Entra/Google) and routes to appropriate verification
 - **CORS**: Supports environment variable configuration via ALLOWED_ORIGINS, defaults to localhost and schedulecoaches.com
-- **Apple verification**: Currently uses JWT decode (TODO: Add Apple public key verification for production)
+- **Security fixes applied**:
+  - CORS: Properly rejects disallowed origins (does not return Access-Control-Allow-Origin for disallowed requests)
+  - Apple Sign-In: Disabled until proper signature verification is implemented (rejects tokens with clear error)
+  - Database logging: Masks sensitive credentials (server, database, user) in logs
+  - Removed old functions.js file to avoid confusion
 
 ---
 

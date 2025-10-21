@@ -141,15 +141,25 @@ async function connectWithRetry(maxAttempts = 4): Promise<sql.ConnectionPool> {
 }
 
 /**
+ * Mask sensitive string (show first 3 and last 3 characters)
+ */
+function maskSensitive(value: string | undefined): string {
+  if (!value || value.length <= 6) {
+    return value ? '***' : 'EMPTY';
+  }
+  return `${value.substring(0, 3)}...${value.substring(value.length - 3)}`;
+}
+
+/**
  * Get database connection (singleton pattern with connection pooling)
  */
 export async function getConnection(): Promise<sql.ConnectionPool> {
   if (!pool) {
     try {
       console.log('[Database] Attempting to connect to SQL Server...');
-      console.log('[Database] Server:', config.server || 'EMPTY');
-      console.log('[Database] Database:', config.database || 'EMPTY');
-      console.log('[Database] User:', config.user || 'EMPTY');
+      console.log('[Database] Server:', maskSensitive(config.server));
+      console.log('[Database] Database:', maskSensitive(config.database));
+      console.log('[Database] User:', maskSensitive(config.user));
 
       pool = await connectWithRetry();
     } catch (error: any) {

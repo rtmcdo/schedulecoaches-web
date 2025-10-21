@@ -84,19 +84,24 @@ async function verifyGoogleToken(token: string): Promise<any> {
 
 /**
  * Verify Apple ID token
- * Note: For production, should verify signature using Apple's public keys
+ *
+ * SECURITY: Apple Sign-In is currently NOT SUPPORTED
+ * Proper signature verification using Apple's public keys must be implemented
+ * before Apple authentication can be enabled.
+ *
+ * TODO: Implement Apple public key verification:
+ * 1. Fetch Apple's public keys from https://appleid.apple.com/auth/keys
+ * 2. Verify JWT signature using the appropriate key
+ * 3. Validate issuer (https://appleid.apple.com)
+ * 4. Validate audience (our Apple client ID)
+ * 5. Validate token expiration
  */
 async function verifyAppleToken(token: string): Promise<any> {
-    // Apple tokens are issued by https://appleid.apple.com
-    // For MVP, we'll decode without full verification
-    // TODO: Add proper Apple public key verification
-    const decoded = jwt.decode(token, { complete: true });
-
-    if (!decoded || typeof decoded === 'string') {
-        throw new Error('Invalid Apple token');
-    }
-
-    return decoded.payload;
+    // REJECT Apple tokens until proper verification is implemented
+    throw new Error(
+        'Apple Sign-In is not currently supported. ' +
+        'Signature verification must be implemented before this feature can be enabled.'
+    );
 }
 
 /**
