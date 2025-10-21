@@ -330,11 +330,13 @@ export async function handleRedirectCallback() {
       msal.setActiveAccount(response.account)
     }
 
-    const tokenFromResponse = response.accessToken
+    // Use ID token for authentication (not access token)
+    // OIDC scopes (openid, profile, email) return an ID token with user identity
+    const tokenFromResponse = response.idToken
     const token = tokenFromResponse || (await acquireTokenSilently(msal, response.account || null))
 
     if (!token) {
-      throw new Error('No access token returned from Entra')
+      throw new Error('No ID token returned from Entra')
     }
 
     persistAuthSession('entra', token)
@@ -568,9 +570,10 @@ async function acquireTokenSilently(msal: PublicClientApplication, account: Acco
       scopes: MSAL_SCOPES
     })
 
-    if (result?.accessToken) {
-      persistAuthSession('entra', result.accessToken)
-      return result.accessToken
+    // Return ID token (not access token) for user authentication
+    if (result?.idToken) {
+      persistAuthSession('entra', result.idToken)
+      return result.idToken
     }
   } catch (err) {
     if (err instanceof InteractionRequiredAuthError) {
