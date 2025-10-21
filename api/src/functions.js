@@ -118,14 +118,16 @@ app.http('create-portal-session', {
         };
       }
 
-      // Retrieve the checkout session to get the customer_account
+      // Retrieve the checkout session to get the customer details
       const checkoutSession = await stripe.checkout.sessions.retrieve(session_id);
+      const customerAccount = checkoutSession.customer_account;
+      const customer = checkoutSession.customer;
 
-      if (!checkoutSession.customer_account) {
+      if (!customerAccount && !customer) {
         return {
           status: 400,
           jsonBody: {
-            error: 'No customer account found for this session'
+            error: 'No customer found for this session'
           }
         };
       }
@@ -134,10 +136,10 @@ app.http('create-portal-session', {
 
       // Create billing portal session
       const portalSession = await stripe.billingPortal.sessions.create({
-        // Use the customer_account parameter for Accounts v2:
-        customer_account: checkoutSession.customer_account,
-        // If your integration uses Customers v1, use the customer parameter:
-        // customer: checkoutSession.customer,
+        // Prefer customer_account when available (Stripe Accounts v2)
+        ...(customerAccount
+          ? { customer_account: customerAccount }
+          : { customer: typeof customer === 'string' ? customer : customer.id }),
         return_url: domain,
       });
 

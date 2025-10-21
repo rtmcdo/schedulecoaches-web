@@ -1,0 +1,25 @@
+# Azure Functions
+bin/
+obj/
+dist/
+node_modules/
+
+# Environment variables
+local.settings.json
+.env
+
+# TypeScript
+*.js
+*.js.map
+!jest.config.js
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
