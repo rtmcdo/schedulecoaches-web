@@ -3,8 +3,9 @@ import { app } from '@azure/functions';
 // Import all function handlers
 import './functions/health';
 import './functions/authMe';
+import './functions/createCheckoutSession';
 
-// Stripe endpoints (JavaScript - will be migrated to TypeScript in Phase 4 & 5)
+// Stripe endpoints (JavaScript - webhook will be migrated to TypeScript in Phase 5)
 import './functions.js';
 
 // This file serves as the entry point for all functions
