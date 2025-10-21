@@ -122,10 +122,14 @@ Connection string should point to same database as pbcoach
 - **Token verification**: Auto-detects issuer (Entra/Google) and routes to appropriate verification
 - **CORS**: Supports environment variable configuration via ALLOWED_ORIGINS, defaults to localhost and schedulecoaches.com
 - **Security fixes applied**:
-  - CORS: Properly rejects disallowed origins (does not return Access-Control-Allow-Origin for disallowed requests)
+  - CORS: Properly rejects disallowed origins (baseCorsHeaders does not include Access-Control-Allow-Origin)
+  - CORS: Origin header only added by getCorsHeaders() for allowed origins (cannot leak via direct usage)
   - Apple Sign-In: Disabled until proper signature verification is implemented (rejects tokens with clear error)
   - Database logging: Masks sensitive credentials (server, database, user) in logs
-  - Removed old functions.js file to avoid confusion
+- **Stripe endpoints**: Temporarily retained in functions.js (JavaScript) until Phase 4 & 5 migration
+  - src/app.ts imports functions.js to register checkout, billing-portal, and webhook endpoints
+  - tsconfig.json updated with "allowJs": true to include JS files in build
+  - Will be migrated to TypeScript in Phase 4 (checkout) and Phase 5 (webhook)
 
 ---
 

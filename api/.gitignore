@@ -12,6 +12,7 @@ local.settings.json
 *.js
 *.js.map
 !jest.config.js
+!src/functions.js
 
 # IDE
 .vscode/

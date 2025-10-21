@@ -9,9 +9,9 @@ import { HttpRequest } from '@azure/functions';
  * - Azure Static Web Apps preview URLs
  */
 
-// Default CORS headers
-export const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+// Base CORS headers (without Access-Control-Allow-Origin)
+// The origin header is added dynamically by getCorsHeaders() based on allow-list
+const baseCorsHeaders = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Request-ID, stripe-signature',
     'Access-Control-Max-Age': '86400' // 24 hours
@@ -68,15 +68,14 @@ export function getCorsHeaders(request: HttpRequest): Record<string, string> {
 
     if (origin && isAllowedOrigin(request)) {
         return {
-            ...corsHeaders,
+            ...baseCorsHeaders,
             'Access-Control-Allow-Origin': origin
         };
     }
 
     // For requests without origin header (same-origin or non-browser)
-    // or disallowed origins, return headers WITHOUT Access-Control-Allow-Origin
-    const { 'Access-Control-Allow-Origin': _, ...headersWithoutOrigin } = corsHeaders;
-    return headersWithoutOrigin;
+    // or disallowed origins, return base headers without Access-Control-Allow-Origin
+    return baseCorsHeaders;
 }
 
 /**

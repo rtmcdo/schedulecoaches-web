@@ -42,7 +42,7 @@ const settingsFeatures = [
           Only $20/month
         </div>
         <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-          Everything You Need to<br class="hidden sm:block" />Run Your Pickleball Coaching Business
+          Everything You Need to <br class="hidden sm:block" />Run Your Pickleball Coaching Business
         </h1>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
           Professional coaching management software designed specifically for pickleball coaches.
