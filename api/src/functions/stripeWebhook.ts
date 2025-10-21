@@ -87,20 +87,33 @@ export async function stripeWebhook(
           };
         }
 
+        // Validate userId is a GUID before using sql.UniqueIdentifier
+        // If not a valid GUID, fallback to email lookup
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const isValidGuid = userId && uuidRegex.test(userId);
+
+        if (!isValidGuid && userId) {
+          context.warn(`⚠️ metadata.user_id is not a valid GUID (${userId}), falling back to email lookup`);
+        }
+
         // Update user to coach_paid
-        const result = await pool.request()
-          .input('userId', sql.UniqueIdentifier, userId)
+        const request = pool.request()
           .input('email', sql.NVarChar, email)
           .input('customerId', sql.NVarChar, customerId)
-          .input('subscriptionId', sql.NVarChar, subscriptionId)
-          .query(`
+          .input('subscriptionId', sql.NVarChar, subscriptionId);
+
+        // Only add userId parameter if it's a valid GUID
+        if (isValidGuid) {
+          request.input('userId', sql.UniqueIdentifier, userId);
+        }
+
+        const result = await request.query(`
             UPDATE Users
             SET role = 'coach_paid',
                 stripeCustomerId = @customerId,
                 stripeSubscriptionId = @subscriptionId,
                 subscriptionStatus = 'active'
-            WHERE id = @userId
-               OR LOWER(email) = LOWER(@email)
+            WHERE ${isValidGuid ? 'id = @userId OR' : ''} LOWER(email) = LOWER(@email)
           `);
 
         if (result.rowsAffected[0] === 0) {
