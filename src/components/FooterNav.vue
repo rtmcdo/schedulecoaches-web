@@ -4,7 +4,7 @@ import { RouterLink } from 'vue-router'
 const currentYear = new Date().getFullYear()
 // Build ID for debugging - updated manually per commit
 // In production, this would be injected by CI/CD
-const buildId = '49f7551' // Current git commit hash
+const buildId = '8c7f812' // Current git commit hash
 const buildDate = '2025-10-21'
 </script>
 
