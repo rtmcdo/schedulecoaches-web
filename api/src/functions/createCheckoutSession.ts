@@ -1,7 +1,9 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { authenticate } from '../utils/auth';
 import { getCorsHeaders } from '../middleware/cors';
+import { getConnection } from '../utils/database';
 import Stripe from 'stripe';
+import sql from 'mssql';
 
 /**
  * Create Stripe Checkout Session endpoint for schedulecoaches.com
@@ -51,6 +53,48 @@ export async function createCheckoutSessionHandler(
         // Parse request body
         const body = await request.json() as any;
         const lookup_key = body.lookup_key || 'pickleball_monthly';
+        const referral_code = body.referral_code;
+        const customMetadata = body.metadata || {};
+
+        // Look up user in database to get database row ID (not token subject ID)
+        // The webhook needs the database UUID to update the user's subscription status
+        const pool = await getConnection();
+
+        // Determine provider column based on token
+        const provider = user.provider;
+        const providerColumn = provider === 'google'
+            ? 'googleAccountId'
+            : provider === 'microsoft'
+                ? 'microsoftAccountId'
+                : provider === 'apple'
+                    ? 'appleAccountId'
+                    : 'entraAccountId';
+
+        const userResult = await pool.request()
+            .input('accountId', sql.NVarChar, user.id)
+            .input('email', sql.NVarChar, user.email)
+            .query(`
+                SELECT id, email
+                FROM Users
+                WHERE ${providerColumn} = @accountId
+                   OR azureAdId = @accountId
+                   OR (email IS NOT NULL AND LOWER(email) = LOWER(@email))
+            `);
+
+        if (!userResult.recordset || userResult.recordset.length === 0) {
+            return {
+                status: 404,
+                body: JSON.stringify({
+                    error: 'User not found in database. Please ensure your account was created via /api/auth-me first.'
+                }),
+                headers: getCorsHeaders(request)
+            };
+        }
+
+        const dbUser = userResult.recordset[0];
+        const dbUserId = dbUser.id; // This is the database UUID, not the token subject
+
+        context.log('[createCheckoutSession] Found user in database:', dbUserId, 'for email:', user.email);
 
         // Initialize Stripe
         const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -108,10 +152,16 @@ export async function createCheckoutSessionHandler(
             cancel_url: `${domain}/sign-up`,
             customer_email: user.email,
             metadata: {
-                user_id: user.id,
-                user_email: user.email
+                user_id: dbUserId,  // Database row ID (UUID), not token subject
+                user_email: user.email,
+                ...customMetadata  // Preserve any custom metadata from request body
             }
         };
+
+        // Add referral_code if provided
+        if (referral_code) {
+            sessionParams.metadata!.referral_code = referral_code;
+        }
 
         context.log('[createCheckoutSession] Creating Stripe session for user:', user.email);
         const session = await stripe.checkout.sessions.create(sessionParams);
