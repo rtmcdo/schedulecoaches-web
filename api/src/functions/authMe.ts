@@ -123,15 +123,15 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
                 context.log('[authMe] Found user by email, linking provider account');
 
                 // Link this provider's account ID to the existing user for future lookups
+                // Only set azureAdId if provider is Entra or Microsoft (preserve existing value otherwise)
+                const updateQuery = provider === 'entra' || provider === 'microsoft'
+                    ? `UPDATE Users SET ${providerColumn} = @accountId, azureAdId = @accountId WHERE id = @userId`
+                    : `UPDATE Users SET ${providerColumn} = @accountId WHERE id = @userId`;
+
                 await pool.request()
                     .input('userId', sql.UniqueIdentifier, dbUser.id)
                     .input('accountId', sql.NVarChar, accountId)
-                    .query(`
-                        UPDATE Users
-                        SET ${providerColumn} = @accountId,
-                            azureAdId = @accountId
-                        WHERE id = @userId
-                    `);
+                    .query(updateQuery);
             }
         }
 
@@ -146,12 +146,14 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
             const googleAccountId = provider === 'google' ? accountId : null;
             const microsoftAccountId = provider === 'microsoft' ? accountId : null;
             const appleAccountId = provider === 'apple' ? accountId : null;
+            // Only set azureAdId for Entra and Microsoft providers
+            const azureAdId = (provider === 'entra' || provider === 'microsoft') ? accountId : null;
 
             try {
                 // Insert new user with race condition protection
                 const insertResult = await pool.request()
                     .input('userId', sql.UniqueIdentifier, newUserId)
-                    .input('accountId', sql.NVarChar, accountId)
+                    .input('azureAdId', sql.NVarChar, azureAdId)
                     .input('entraAccountId', sql.NVarChar, entraAccountId)
                     .input('googleAccountId', sql.NVarChar, googleAccountId)
                     .input('microsoftAccountId', sql.NVarChar, microsoftAccountId)
@@ -177,7 +179,7 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
                         )
                         SELECT
                             @userId,
-                            @accountId,
+                            @azureAdId,
                             @entraAccountId,
                             @googleAccountId,
                             @microsoftAccountId,
@@ -259,15 +261,20 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
 
         // Ensure provider-specific account columns are populated for future lookups
         if (dbUser) {
+            // Only set azureAdId if provider is Entra/Microsoft and azureAdId is currently null/empty
+            const updateQuery = provider === 'entra' || provider === 'microsoft'
+                ? `UPDATE Users
+                   SET ${providerColumn} = @accountId,
+                       azureAdId = CASE WHEN azureAdId IS NULL OR azureAdId = '' THEN @accountId ELSE azureAdId END
+                   WHERE id = @userId`
+                : `UPDATE Users
+                   SET ${providerColumn} = @accountId
+                   WHERE id = @userId`;
+
             await pool.request()
                 .input('userId', sql.UniqueIdentifier, dbUser.id)
                 .input('accountId', sql.NVarChar, accountId)
-                .query(`
-                    UPDATE Users
-                    SET ${providerColumn} = @accountId,
-                        azureAdId = CASE WHEN azureAdId IS NULL OR azureAdId = '' THEN @accountId ELSE azureAdId END
-                    WHERE id = @userId
-                `);
+                .query(updateQuery);
         }
 
         // Ensure admins have admin role (takes precedence over subscription roles)
