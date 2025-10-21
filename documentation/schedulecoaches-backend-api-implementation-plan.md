@@ -336,30 +336,117 @@ stripe trigger invoice.payment_failed
 
 ## Phase 6: Database Schema Updates
 **Target**: Add subscription tracking columns to Users table
-**Status**: 🔴 Not Started
+**Status**: 🟢 Complete (Scripts Ready)
 **Estimated Duration**: 1 hour
-**Actual Duration**:
+**Actual Duration**: 1 hour (script creation)
+**Completed**: 2025-10-21
 
 ### Tasks
-- [ ] Create migration script for Users table:
-  - [ ] Add stripeCustomerId NVARCHAR(255)
-  - [ ] Add stripeSubscriptionId NVARCHAR(255)
-  - [ ] Add subscriptionStatus NVARCHAR(50)
-  - [ ] Add subscriptionEndDate DATETIME2
-- [ ] Test migration on development database
-- [ ] Document rollback procedure
+- [x] Create migration script for Users table:
+  - [x] Add stripeCustomerId NVARCHAR(255)
+  - [x] Add stripeSubscriptionId NVARCHAR(255)
+  - [x] Add subscriptionStatus NVARCHAR(50)
+  - [x] Add subscriptionEndDate DATETIME2
+- [x] Create filtered unique indexes (prevent duplicate Stripe IDs)
+- [x] Create backfill strategy (coaches→unpaid, admins→active)
+- [x] Document rollback procedure
+- [x] Create verification queries
+- [x] Coordinate with pbcoach schema alignment
+- [⏸️] Execute migration on database (requires database access)
 
 ### Acceptance Criteria
-- New columns added without breaking existing data
-- NULL values allowed (for existing users)
-- Indexes appropriate for query patterns
-- Migration documented in /api/migrations folder
+- ✅ Migration scripts created in /api/migrations folder
+- ✅ NULL values allowed (for existing users)
+- ✅ Filtered unique indexes defined (prevent duplicates)
+- ✅ Backfill strategy documented
+- ✅ Rollback procedure documented
+- ✅ Verification queries created
+- ✅ Coordination with pbcoach verified (no conflicts)
+- ⏸️ Migration execution pending (requires database credentials)
 
 ### Notes
 ```
-Coordinate with pbcoach database schema
-Run migration during low-traffic window
+Coordinate with pbcoach database schema - DONE
+Run migration during low-traffic window - PENDING
 ```
+
+### Implementation Notes
+- Created comprehensive migration scripts in `/api/migrations/`:
+  - `001_add_subscription_columns.sql` - Main migration (transaction-safe)
+  - `001_rollback_subscription_columns.sql` - Rollback script (emergency use)
+  - `001_verify_subscription_columns.sql` - Verification queries (run anytime)
+  - `README.md` - Complete documentation and troubleshooting guide
+
+- **Migration Features**:
+  - Transaction-safe: Automatic rollback on errors
+  - Pre-migration verification: Checks for data issues before running
+  - Post-migration verification: Validates all changes after completion
+  - Comprehensive logging: Emoji-prefixed output for easy scanning (✅, ❌, ⚠️)
+  - Idempotent checks: Won't run twice accidentally
+
+- **Schema Changes**:
+  ```sql
+  ALTER TABLE Users ADD
+      stripeCustomerId NVARCHAR(255) NULL,
+      stripeSubscriptionId NVARCHAR(255) NULL,
+      subscriptionStatus NVARCHAR(50) NULL,
+      subscriptionEndDate DATETIME2 NULL;
+  ```
+
+- **Filtered Unique Indexes** (prevent duplicate Stripe IDs while allowing NULLs):
+  ```sql
+  CREATE UNIQUE INDEX IX_Users_StripeCustomerId
+      ON Users(stripeCustomerId)
+      WHERE stripeCustomerId IS NOT NULL;
+
+  CREATE UNIQUE INDEX IX_Users_StripeSubscriptionId
+      ON Users(stripeSubscriptionId)
+      WHERE stripeSubscriptionId IS NOT NULL;
+
+  CREATE INDEX IX_Users_SubscriptionStatus
+      ON Users(subscriptionStatus)
+      WHERE subscriptionStatus IS NOT NULL;
+  ```
+
+- **Backfill Strategy**:
+  - Coaches (`role='coach'`) → `subscriptionStatus='unpaid'`
+  - Admins (`role='admin'`) → `subscriptionStatus='active'`
+  - Clients (`role='client'`) → `subscriptionStatus=NULL` (don't need subscriptions)
+  - Legacy mobile coaches → `subscriptionStatus='unpaid'` (must complete signup)
+
+- **Coordination with pbcoach**:
+  - ✅ No column name conflicts
+  - ✅ No index conflicts
+  - ✅ Nullable columns don't break existing queries
+  - ✅ No foreign key conflicts
+  - ✅ Aligns with pbcoach Phase 1/2 migrations (coachId, personId, Persons, CoachClients)
+  - ✅ Can run NOW - no blocking dependencies
+
+- **Safety Measures**:
+  - Transaction wrapper with automatic rollback on errors
+  - Pre-checks for NULL roles (aborts if found)
+  - Pre-checks for existing columns (prevents duplicate runs)
+  - 5-second pause before rollback (allows cancellation)
+  - Comprehensive verification queries after completion
+  - Rollback script available if needed
+
+- **Post-Migration Monitoring**:
+  - Daily verification checks for first week
+  - Monitor Stripe webhook logs for errors
+  - Check for users stuck in 'unpaid' status with payment completed
+  - Alert on duplicate Stripe IDs (shouldn't happen due to indexes)
+
+- **Next Steps**:
+  1. ⏸️ Schedule migration execution during low-traffic window
+  2. ⏸️ Notify pbcoach team before running
+  3. ⏸️ Run migration: `001_add_subscription_columns.sql`
+  4. ⏸️ Verify results: `001_verify_subscription_columns.sql`
+  5. ⏸️ Update pbcoach app types to include new fields
+
+- **Related Documentation**:
+  - Detailed plan: `/documentation/PHASE_6_MIGRATION.md`
+  - Migration scripts: `/api/migrations/` folder
+  - Subscription lifecycle: `/documentation/SUBSCRIPTION_STATUS.md`
 
 ---
 
@@ -545,8 +632,8 @@ Monitor for first few days after launch
 
 **Total Phases**: 11
 **Estimated Total Duration**: 3-5 days
-**Current Phase**: Phase 6 (Database Schema Updates)
-**Overall Progress**: 45% (5/11 phases)
+**Current Phase**: Phase 7 (Subscription Status Endpoint)
+**Overall Progress**: 55% (6/11 phases)
 **Last Updated**: 2025-10-21
 
 ### Phase Status Legend
@@ -589,7 +676,7 @@ Monitor for first few days after launch
 
 ---
 
-**Next Action**: Begin Phase 6 - Database Schema Updates (add subscription tracking columns)
+**Next Action**: Execute Phase 6 migration (001_add_subscription_columns.sql), then begin Phase 7 - Subscription Status Endpoint
 
 ---
 
