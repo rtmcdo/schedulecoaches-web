@@ -203,6 +203,10 @@ export async function authenticate(
         }
 
         // Entra ID (default)
+        // TEMPORARY DEBUG: Log the actual issuer claim from the token
+        context.log('[Auth] DEBUG: Token issuer from decoded token:', decoded?.iss);
+        context.log('[Auth] DEBUG: Expected issuer from config:', authConfig.issuer);
+
         const entraPayload = await verifyEntraToken(token);
 
         context.log('[Auth] Entra token verified');

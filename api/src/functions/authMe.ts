@@ -164,6 +164,7 @@ export async function authMeHandler(request: HttpRequest, context: InvocationCon
                     .input('lastName', sql.NVarChar, normalizedLastName)
                     .input('role', sql.NVarChar, role)
                     .input('subscriptionStatus', sql.NVarChar, subscriptionStatus)
+                    .input('accountId', sql.NVarChar, accountId)
                     .query(`
                         INSERT INTO Users (
                             id,

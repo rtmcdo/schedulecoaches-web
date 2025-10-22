@@ -18,8 +18,8 @@ export const authConfig = {
     },
 
     get issuer() {
-        // External ID issuer format for ID tokens uses tenant ID
-        return `https://${this.tenantSubdomain}.ciamlogin.com/${this.tenantId}/v2.0`;
+        // External ID issuer format for ID tokens uses tenant ID in both subdomain AND path
+        return `https://${this.tenantId}.ciamlogin.com/${this.tenantId}/v2.0`;
     },
 
     get jwksUri() {

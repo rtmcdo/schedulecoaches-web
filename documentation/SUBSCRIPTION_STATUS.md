@@ -115,19 +115,95 @@ Backend listens for these Stripe webhook events and updates **ONLY subscriptionS
 ### 3. App Access Control
 
 **Location:** pbcoach mobile app login
+**Status:** ⚠️ **CRITICAL REQUIREMENT - NOT YET IMPLEMENTED IN APP**
+
+**IMPORTANT**: The pbcoach mobile app MUST implement subscription status checking on login. Without this check, users with `subscriptionStatus = 'unpaid'` or `'canceled'` will be able to access the app even though they haven't paid.
+
+#### Required Implementation in pbcoach App
 
 When user logs into pbcoach app:
-1. App calls `/auth-me` after authentication
-2. Backend returns user with `role` and `subscriptionStatus` fields
-3. App checks access:
-   - `role === 'admin'` → Allow full access
-   - `role === 'coach' && subscriptionStatus === 'free'` → Allow full access (demo/employee)
-   - `role === 'coach' && subscriptionStatus === 'active'` → Allow full access
-   - `role === 'coach' && subscriptionStatus === 'trialing'` → Allow full access
-   - `role === 'coach' && subscriptionStatus === 'past_due'` → Show warning, allow read-only
-   - `role === 'coach' && subscriptionStatus === 'unpaid'` → Show "Complete subscription at schedulecoaches.com"
-   - `role === 'coach' && subscriptionStatus === 'canceled'` → Show "Reactivate subscription at schedulecoaches.com"
-   - `role === 'client'` → Allow booking only (no subscription needed)
+
+1. **Call `/api/auth-me` after authentication**
+   - This endpoint returns the user object with `role` and `subscriptionStatus` fields
+
+2. **Check `subscriptionStatus` field and enforce access control**
+
+   **Full Access (Allow login):**
+   - `role === 'admin'` → Allow full access (admins always allowed)
+   - `role === 'coach' && subscriptionStatus === 'free'` → Allow full access (demo/employee accounts)
+   - `role === 'coach' && subscriptionStatus === 'active'` → Allow full access (paying customers)
+   - `role === 'coach' && subscriptionStatus === 'trialing'` → Allow full access (free trial)
+   - `role === 'client'` → Allow booking only (clients don't need subscriptions)
+
+   **Limited Access (Read-only, show warning):**
+   - `role === 'coach' && subscriptionStatus === 'past_due'` → Show warning banner, allow read-only mode
+
+   **Block Access (Show upgrade message):**
+   - `role === 'coach' && subscriptionStatus === 'unpaid'` → **BLOCK LOGIN**, show: "Complete your subscription at schedulecoaches.com"
+   - `role === 'coach' && subscriptionStatus === 'canceled'` → **BLOCK LOGIN**, show: "Reactivate your subscription at schedulecoaches.com"
+   - `role === 'coach' && subscriptionStatus === 'incomplete'` → **BLOCK LOGIN**, show: "Complete payment at schedulecoaches.com"
+   - `role === 'coach' && subscriptionStatus === 'incomplete_expired'` → **BLOCK LOGIN**, show: "Subscribe at schedulecoaches.com"
+
+3. **Store subscription status in app state**
+   - Cache the status to check on every app launch
+   - Refresh status periodically (e.g., daily or on app resume)
+
+#### Example App Implementation
+
+```typescript
+// In app login flow (after Entra/Google/Apple auth)
+async function completeLogin(authToken: string) {
+  // Call backend to get user profile
+  const response = await fetch('https://api.schedulecoaches.com/auth-me', {
+    headers: { 'Authorization': `Bearer ${authToken}` }
+  });
+
+  const { user } = await response.json();
+
+  // Check subscription status
+  if (user.role === 'coach') {
+    const blockedStatuses = ['unpaid', 'canceled', 'incomplete', 'incomplete_expired'];
+
+    if (blockedStatuses.includes(user.subscriptionStatus)) {
+      // BLOCK ACCESS - Show upgrade screen
+      showSubscriptionRequiredScreen(user.subscriptionStatus);
+      return;
+    }
+
+    if (user.subscriptionStatus === 'past_due') {
+      // Allow access but show warning
+      showPaymentFailedWarning();
+    }
+  }
+
+  // Allow login
+  proceedToApp(user);
+}
+
+function showSubscriptionRequiredScreen(status: string) {
+  // Show full-screen overlay blocking app access
+  const messages = {
+    'unpaid': 'Complete your subscription at schedulecoaches.com to get started',
+    'canceled': 'Your subscription has been canceled. Reactivate at schedulecoaches.com',
+    'incomplete': 'Complete your payment at schedulecoaches.com',
+    'incomplete_expired': 'Subscribe at schedulecoaches.com to use the app'
+  };
+
+  showModal({
+    title: 'Subscription Required',
+    message: messages[status] || 'An active subscription is required',
+    primaryButton: { text: 'Subscribe', action: () => openURL('https://schedulecoaches.com/sign-up') },
+    secondaryButton: { text: 'Logout', action: logout }
+  });
+}
+```
+
+#### Why This Is Critical
+
+1. **Revenue Protection**: Without this check, users can create accounts but never pay
+2. **Subscription Enforcement**: Users who cancel can continue using the app
+3. **Business Model**: The app is subscription-based - access must be tied to payment
+4. **User Experience**: Clear messaging about why they can't access the app
 
 ## Database Schema
 
