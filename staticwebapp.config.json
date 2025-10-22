@@ -5,10 +5,17 @@
   },
   "routes": [
     {
+      "route": "/*",
+      "allowedRoles": ["anonymous"]
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
     }
   ],
+  "auth": {
+    "identityProviders": {}
+  },
   "responseOverrides": {
     "404": {
       "rewrite": "/index.html",
