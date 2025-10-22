@@ -156,8 +156,13 @@ export async function authenticate(
         const decoded = jwt.decode(token) as jwt.JwtPayload | null;
         const issuer = decoded?.iss || '';
 
+        // Debug logging
+        context.log('[Auth] Token issuer:', issuer);
+        context.log('[Auth] Google Client IDs configured:', authConfig.googleClientIds);
+
         // Google Sign-In
         if (issuer.includes('accounts.google.com')) {
+            context.log('[Auth] Detected Google token, verifying...');
             const googlePayload = await verifyGoogleToken(token);
 
             if (!googlePayload) {
