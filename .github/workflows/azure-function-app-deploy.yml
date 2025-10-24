@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_NAME: 'schedulecoaches-api-cge6gsaye2g4aeg3'
+  AZURE_FUNCTIONAPP_NAME: 'schedulecoaches-api'
   AZURE_FUNCTIONAPP_PACKAGE_PATH: 'api'
   NODE_VERSION: '20.x'
 
@@ -26,7 +26,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: 'Resolve Project Dependencies Using Npm'
+      - name: 'Install Azure Functions Core Tools'
+        run: npm install -g azure-functions-core-tools@4 --unsafe-perm true
+
+      - name: 'Login to Azure'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 'Resolve Project Dependencies and Build'
         shell: bash
         run: |
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
@@ -34,10 +42,7 @@ jobs:
           npm run build --if-present
           popd
 
-      - name: 'Run Azure Functions Action'
-        uses: Azure/functions-action@v1
-        id: fa
-        with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+      - name: 'Deploy to Azure Functions'
+        run: |
+          cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          func azure functionapp publish ${{ env.AZURE_FUNCTIONAPP_NAME }} --typescript
