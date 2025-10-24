@@ -42,7 +42,15 @@ jobs:
           npm run build --if-present
           popd
 
-      - name: 'Deploy to Azure Functions'
+      - name: 'Create deployment package'
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          func azure functionapp publish ${{ env.AZURE_FUNCTIONAPP_NAME }} --typescript
+          zip -r ../deploy.zip . -x "*.git*" -x "node_modules/*" -x "*.DS_Store"
+
+      - name: 'Deploy to Azure Functions'
+        run: |
+          az functionapp deployment source config-zip \
+            --resource-group prd-schedulecoachesweb \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --src deploy.zip \
+            --build-remote true
