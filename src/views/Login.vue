@@ -11,23 +11,17 @@ const {
   isLoading: authLoading,
   error: authError
 } = useEntraAuth()
-const email = ref('')
-const password = ref('')
 const localError = ref('')
 
 const isProcessing = computed(() => authLoading.value)
 const displayError = computed(() => localError.value || authError.value || '')
 
 const handleLogin = async () => {
-  if (!email.value || !password.value) {
-    localError.value = 'Please enter your email and password'
-    return
-  }
-
   localError.value = ''
 
   try {
-    await login(email.value)
+    // Redirect to Entra email login (uses redirect flow)
+    await login('')
   } catch (err) {
     localError.value = err instanceof Error ? err.message : 'Login failed. Please try again.'
   }
@@ -57,11 +51,6 @@ const handleAppleLogin = async () => {
   }
 }
 
-const handleForgotPassword = () => {
-  // TODO: Implement password reset
-  console.log('Forgot password clicked')
-  alert('Password reset functionality coming soon. Please contact support@schedulecoaches.com')
-}
 </script>
 
 <template>
@@ -76,11 +65,12 @@ const handleForgotPassword = () => {
       <!-- Login Card -->
       <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
         <!-- OAuth Buttons -->
-        <div class="space-y-3 mb-6">
+        <div class="space-y-3">
           <button
             @click="handleGoogleLogin"
             type="button"
-            class="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+            :disabled="isProcessing"
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg class="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -88,106 +78,39 @@ const handleForgotPassword = () => {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            <span v-if="!isProcessing">Continue with Google</span>
+            <span v-else>Signing in...</span>
           </button>
 
           <button
             @click="handleAppleLogin"
             type="button"
-            class="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-black text-white hover:bg-gray-900 transition-colors"
+            :disabled="isProcessing"
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-black text-white hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
             </svg>
-            Continue with Apple
-          </button>
-        </div>
-
-        <!-- Divider -->
-        <div class="relative mb-6">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-200"></div>
-          </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="px-4 bg-white text-gray-500">Or with email</span>
-          </div>
-        </div>
-
-        <!-- Login Form -->
-        <form @submit.prevent="handleLogin" class="space-y-4">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email address</label>
-            <input
-              id="email"
-              v-model="email"
-              type="email"
-              autocomplete="email"
-              required
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              id="password"
-              v-model="password"
-              type="password"
-              autocomplete="current-password"
-              required
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <input
-                id="remember-me"
-                type="checkbox"
-                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label for="remember-me" class="ml-2 block text-sm text-gray-700">
-                Remember me
-              </label>
-            </div>
-
-            <button
-              type="button"
-              @click="handleForgotPassword"
-              class="text-sm text-primary-600 hover:underline"
-            >
-              Forgot password?
-            </button>
-          </div>
-
-          <div v-if="displayError" class="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-            {{ displayError }}
-          </div>
-
-          <button
-            type="submit"
-            :disabled="isProcessing"
-            class="w-full bg-gradient-to-r from-primary-600 to-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-primary-700 hover:to-blue-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span v-if="!isProcessing">Sign In</span>
+            <span v-if="!isProcessing">Continue with Apple</span>
             <span v-else>Signing in...</span>
           </button>
-        </form>
 
-        <!-- Manage Subscription Link -->
-        <div class="mt-6 pt-6 border-t border-gray-200">
-          <p class="text-sm text-gray-600 text-center mb-3">
-            Need to manage your subscription?
-          </p>
-          <a
-            href="#"
-            @click.prevent="router.push('/account')"
-            class="block w-full text-center px-4 py-2 border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
+          <button
+            @click="handleLogin"
+            type="button"
+            :disabled="isProcessing"
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Go to Account Management
-          </a>
+            <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <span v-if="!isProcessing">Continue with Email</span>
+            <span v-else>Signing in...</span>
+          </button>
+        </div>
+
+        <div v-if="displayError" class="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+          {{ displayError }}
         </div>
       </div>
 
