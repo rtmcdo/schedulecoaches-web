@@ -6,9 +6,7 @@ import './functions/authMe';
 import './functions/createCheckoutSession';
 import './functions/stripeWebhook';
 import './functions/subscriptionStatus';
-
-// Stripe billing portal endpoint (JavaScript - will be migrated in future phase)
-import './functions.js';
+import './functions/createPortalSession';
 
 // This file serves as the entry point for all functions
 // Each function registers itself with the app object
