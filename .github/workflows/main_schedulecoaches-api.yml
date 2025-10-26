@@ -76,5 +76,5 @@ jobs:
         with:
           app-name: 'schedulecoaches-api'
           slot-name: 'Production'
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          package: '.'
           
