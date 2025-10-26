@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
 const mobileMenuOpen = ref(false)
 const sportsDropdownOpen = ref(false)
-const userDropdownOpen = ref(false)
 const isScrolled = ref(false)
 
-// TODO: Implement real authentication
-const isAuthenticated = ref(false)
-const user = ref<{ name: string; email: string } | null>(null)
+// Real authentication integration
+const { isAuthenticated, signOut } = useAuth()
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 10
@@ -30,30 +29,15 @@ const toggleMobileMenu = () => {
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false
   sportsDropdownOpen.value = false
-  userDropdownOpen.value = false
 }
 
 const toggleSportsDropdown = () => {
   sportsDropdownOpen.value = !sportsDropdownOpen.value
 }
 
-const toggleUserDropdown = () => {
-  userDropdownOpen.value = !userDropdownOpen.value
-}
-
 const handleSignOut = () => {
-  // signOut()
+  signOut()
   closeMobileMenu()
-}
-
-// Get user initials for avatar
-const getUserInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2)
 }
 </script>
 
@@ -136,80 +120,41 @@ const getUserInitials = (name: string) => {
             Contact
           </RouterLink>
         </li>
-        <li v-if="!isAuthenticated">
+      </ul>
+
+      <!-- Desktop CTA / Auth Buttons -->
+      <div class="hidden md:flex items-center gap-3">
+        <!-- Authenticated: Show My Account + Sign Out -->
+        <template v-if="isAuthenticated.value">
+          <RouterLink
+            to="/account"
+            class="text-gray-700 hover:text-primary-600 transition-colors font-medium"
+          >
+            My Account
+          </RouterLink>
+          <button
+            @click="handleSignOut"
+            class="text-gray-700 hover:text-red-600 transition-colors font-medium"
+          >
+            Sign Out
+          </button>
+        </template>
+
+        <!-- Not Authenticated: Show Login + Sign Up -->
+        <template v-else>
           <RouterLink
             to="/login"
             class="text-gray-700 hover:text-primary-600 transition-colors font-medium"
           >
             Login
           </RouterLink>
-        </li>
-      </ul>
-
-      <!-- Desktop CTA / User Menu -->
-      <div class="hidden md:block">
-        <!-- User Menu (Authenticated) -->
-        <div v-if="isAuthenticated && user" class="relative">
-          <button
-            @click="toggleUserDropdown"
-            class="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          <RouterLink
+            to="/sign-up"
+            class="bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md inline-block"
           >
-            <!-- User Avatar -->
-            <div class="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
-              {{ getUserInitials(user.name) }}
-            </div>
-            <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          <!-- Dropdown Menu -->
-          <Transition
-            enter-active-class="transition ease-out duration-100"
-            enter-from-class="transform opacity-0 scale-95"
-            enter-to-class="transform opacity-100 scale-100"
-            leave-active-class="transition ease-in duration-75"
-            leave-from-class="transform opacity-100 scale-100"
-            leave-to-class="transform opacity-0 scale-95"
-          >
-            <div
-              v-if="userDropdownOpen"
-              class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-200"
-            >
-              <!-- User Info -->
-              <div class="px-4 py-3 border-b border-gray-200">
-                <p class="text-sm font-semibold text-gray-900">{{ user.name }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
-              </div>
-
-              <!-- Menu Items -->
-              <RouterLink
-                to="/account"
-                @click="userDropdownOpen = false"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
-              >
-                Manage Account
-              </RouterLink>
-
-              <!-- Sign Out -->
-              <button
-                @click="handleSignOut"
-                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-200 mt-1"
-              >
-                Sign Out
-              </button>
-            </div>
-          </Transition>
-        </div>
-
-        <!-- Sign Up Button (Not Authenticated) -->
-        <RouterLink
-          v-else
-          to="/sign-up"
-          class="bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md inline-block"
-        >
-          Start Free Trial
-        </RouterLink>
+            Start Free Trial
+          </RouterLink>
+        </template>
       </div>
 
       <!-- Mobile Menu Button -->
@@ -321,45 +266,32 @@ const getUserInitials = (name: string) => {
               Contact
             </RouterLink>
           </li>
-          <li v-if="!isAuthenticated">
+          <!-- Auth Buttons -->
+          <li v-if="isAuthenticated.value" class="pt-2 border-t border-gray-200">
+            <RouterLink
+              to="/account"
+              @click="closeMobileMenu"
+              class="block px-4 py-2 text-gray-700 hover:text-primary-600 transition-colors font-medium"
+            >
+              My Account
+            </RouterLink>
+            <button
+              @click="handleSignOut"
+              class="w-full text-left px-4 py-2 text-red-600 hover:text-red-700 transition-colors font-medium"
+            >
+              Sign Out
+            </button>
+          </li>
+
+          <!-- Not Authenticated -->
+          <li v-else class="pt-2 border-t border-gray-200 space-y-2">
             <RouterLink
               to="/login"
               @click="closeMobileMenu"
-              class="text-gray-700 hover:text-primary-600 block transition-colors"
+              class="block px-4 py-2 text-gray-700 hover:text-primary-600 transition-colors font-medium"
             >
               Login
             </RouterLink>
-          </li>
-          <!-- User Info / CTA -->
-          <li v-if="isAuthenticated && user" class="pt-2 border-t border-gray-200">
-            <div class="flex items-center gap-3 py-3">
-              <div class="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
-                {{ getUserInitials(user.name) }}
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-gray-900 truncate">{{ user.name }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
-              </div>
-            </div>
-            <div class="space-y-2">
-              <RouterLink
-                to="/account"
-                @click="closeMobileMenu"
-                class="block px-4 py-2 text-gray-700 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50"
-              >
-                Manage Account
-              </RouterLink>
-              <button
-                @click="handleSignOut"
-                class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors rounded-lg"
-              >
-                Sign Out
-              </button>
-            </div>
-          </li>
-
-          <!-- Sign Up Button (Not Authenticated) -->
-          <li v-else class="pt-2">
             <RouterLink
               to="/sign-up"
               @click="closeMobileMenu"

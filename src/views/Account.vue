@@ -1,51 +1,88 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const { user, token, isAuthenticated, signOut: authSignOut } = useAuth()
+
 const isLoading = ref(true)
 const error = ref('')
 const subscription = ref({
-  status: 'active',
+  status: 'unknown',
   plan: 'Pickleball Coach Monthly',
   price: '$20',
   billingPeriod: 'month',
-  currentPeriodEnd: '2025-11-18',
+  currentPeriodEnd: '',
   cancelAtPeriodEnd: false
 })
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
 onMounted(async () => {
-  // TODO: Fetch actual subscription status from API
-  // Simulate API call
-  setTimeout(() => {
-    isLoading.value = false
-  }, 500)
+  // Redirect to login if not authenticated
+  if (!isAuthenticated.value || !token.value) {
+    router.push('/login')
+    return
+  }
+
+  await fetchSubscriptionStatus()
 })
+
+const fetchSubscriptionStatus = async () => {
+  try {
+    isLoading.value = true
+    error.value = ''
+
+    const response = await fetch(`${API_BASE_URL}/subscription-status`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch subscription status')
+    }
+
+    const data = await response.json()
+
+    // Map the API response to our subscription display format
+    // The API returns: subscriptionStatus, subscriptionEndDate, hasActiveSubscription, needsPayment
+    subscription.value = {
+      status: data.subscriptionStatus || 'unknown',
+      plan: 'Pickleball Coach Monthly',  // Default - could be enhanced to fetch from Stripe
+      price: '$20',  // Default - could be enhanced to fetch from Stripe
+      billingPeriod: 'month',  // Default - could be enhanced to fetch from Stripe
+      currentPeriodEnd: data.subscriptionEndDate || '',
+      cancelAtPeriodEnd: data.subscriptionStatus === 'canceled' || false
+    }
+  } catch (err) {
+    console.error('Error fetching subscription:', err)
+    // Don't show error for subscription fetch - just use defaults
+    // This allows the page to load even if the subscription fetch fails
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const handleManageBilling = async () => {
   try {
     isLoading.value = true
     error.value = ''
 
-    // Get the session_id from localStorage or session storage
-    // In a real implementation, you'd have this from the login
-    const sessionId = localStorage.getItem('stripe_session_id')
-
-    if (!sessionId) {
-      // If no session, redirect to Stripe portal directly
-      // This is a fallback - in production you'd need to create a portal session via API
-      alert('Please contact support@schedulecoaches.com to manage your subscription')
-      return
+    if (!token.value) {
+      throw new Error('You must be logged in to manage billing')
     }
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/create-portal-session`, {
+    // Call the backend to create a Stripe billing portal session
+    const response = await fetch(`${API_BASE_URL}/create-portal-session`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token.value}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        session_id: sessionId
-      }),
     })
 
     const data = await response.json()
@@ -63,9 +100,7 @@ const handleManageBilling = async () => {
 }
 
 const handleSignOut = () => {
-  // Clear session
-  localStorage.removeItem('stripe_session_id')
-  router.push('/')
+  authSignOut()
 }
 
 const getStatusColor = (status: string) => {
