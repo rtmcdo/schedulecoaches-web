@@ -125,7 +125,7 @@ const handleSignOut = () => {
       <!-- Desktop CTA / Auth Buttons -->
       <div class="hidden md:flex items-center gap-3">
         <!-- Authenticated: Show My Account + Sign Out -->
-        <template v-if="isAuthenticated.value">
+        <template v-if="isAuthenticated">
           <RouterLink
             to="/account"
             class="text-gray-700 hover:text-primary-600 transition-colors font-medium"
@@ -267,7 +267,7 @@ const handleSignOut = () => {
             </RouterLink>
           </li>
           <!-- Auth Buttons -->
-          <li v-if="isAuthenticated.value" class="pt-2 border-t border-gray-200">
+          <li v-if="isAuthenticated" class="pt-2 border-t border-gray-200">
             <RouterLink
               to="/account"
               @click="closeMobileMenu"

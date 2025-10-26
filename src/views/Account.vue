@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { user, token, isAuthenticated, signOut: authSignOut } = useAuth()
+const { token, isAuthenticated, signOut: authSignOut } = useAuth()
 
 const isLoading = ref(true)
 const error = ref('')
