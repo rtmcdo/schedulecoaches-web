@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+import { useEntraAuth } from '@/composables/useEntraAuth'
 
 const router = useRouter()
-const { token, isAuthenticated, signOut: authSignOut } = useAuth()
+const { currentUser, logout, getAccessToken } = useEntraAuth()
+const isAuthenticated = computed(() => !!currentUser.value)
+const token = computed(() => getAccessToken())
+const authSignOut = logout
 
 const isLoading = ref(true)
 const error = ref('')

@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+import { useEntraAuth } from '@/composables/useEntraAuth'
 
 const mobileMenuOpen = ref(false)
 const sportsDropdownOpen = ref(false)
 const isScrolled = ref(false)
 
 // Real authentication integration
-const { isAuthenticated, signOut } = useAuth()
+const { currentUser, logout } = useEntraAuth()
+const isAuthenticated = computed(() => !!currentUser.value)
+const signOut = logout
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 10
