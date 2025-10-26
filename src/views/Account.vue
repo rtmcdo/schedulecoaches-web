@@ -6,7 +6,6 @@ import { useEntraAuth } from '@/composables/useEntraAuth'
 const router = useRouter()
 const { currentUser, getAccessToken } = useEntraAuth()
 const isAuthenticated = computed(() => !!currentUser.value)
-const token = computed(() => getAccessToken())
 
 const isLoading = ref(true)
 const error = ref('')
@@ -15,7 +14,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 onMounted(async () => {
   // Redirect to login if not authenticated
-  if (!isAuthenticated.value || !token.value) {
+  if (!isAuthenticated.value) {
     router.push('/login')
     return
   }
@@ -29,7 +28,10 @@ const handleManageBilling = async () => {
     isLoading.value = true
     error.value = ''
 
-    if (!token.value) {
+    // Get token asynchronously
+    const token = await getAccessToken()
+
+    if (!token) {
       throw new Error('You must be logged in to manage billing')
     }
 
@@ -37,7 +39,7 @@ const handleManageBilling = async () => {
     const response = await fetch(`${API_BASE_URL}/api/create-portal-session`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token.value}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     })
