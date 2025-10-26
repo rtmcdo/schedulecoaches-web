@@ -19,6 +19,13 @@ onMounted(async () => {
     return
   }
 
+  // If returning from Stripe portal, redirect to home instead of looping back
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('from') === 'stripe') {
+    router.push('/')
+    return
+  }
+
   // Redirect directly to Stripe portal
   await handleManageBilling()
 })

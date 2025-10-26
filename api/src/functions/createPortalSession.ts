@@ -111,9 +111,10 @@ export async function createPortalSessionHandler(
         const domain = process.env.DOMAIN || 'http://localhost:5173';
 
         // Create billing portal session
+        // Add ?from=stripe to prevent redirect loop when user returns
         const session = await stripe.billingPortal.sessions.create({
             customer: stripeCustomerId,
-            return_url: `${domain}/account`
+            return_url: `${domain}/account?from=stripe`
         });
 
         context.log('[createPortalSession] Portal session created:', session.id);
