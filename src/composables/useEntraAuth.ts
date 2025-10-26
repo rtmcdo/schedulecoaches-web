@@ -344,7 +344,7 @@ export async function handleRedirectCallback() {
     const authAction = sessionStorage.getItem('entra_auth_action')
 
     // Call authMe to create/get user in database
-    const authMeResponse = await fetch(`${API_URL}/auth-me`, {
+    const authMeResponse = await fetch(`${API_URL}/api/auth-me`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -415,7 +415,7 @@ async function redirectToStripeCheckout(params: { token: string; lookupKey: stri
     }
   }
 
-  const response = await fetch(`${API_URL}/create-checkout-session`, {
+  const response = await fetch(`${API_URL}/api/create-checkout-session`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -449,7 +449,7 @@ async function completeFederatedFlow(options: {
   try {
     persistAuthSession(provider, token)
 
-    const authMeResponse = await fetch(`${API_URL}/auth-me`, {
+    const authMeResponse = await fetch(`${API_URL}/api/auth-me`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -505,7 +505,7 @@ export async function checkAuth(): Promise<boolean> {
       }
 
       // Call authMe
-      const authMeResponse = await fetch(`${API_URL}/auth-me`, {
+      const authMeResponse = await fetch(`${API_URL}/api/auth-me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -527,7 +527,7 @@ export async function checkAuth(): Promise<boolean> {
     }
 
     // Call authMe
-    const authMeResponse = await fetch(`${API_URL}/auth-me`, {
+    const authMeResponse = await fetch(`${API_URL}/api/auth-me`, {
       headers: {
         'Authorization': `Bearer ${accessToken.value}`
       }
