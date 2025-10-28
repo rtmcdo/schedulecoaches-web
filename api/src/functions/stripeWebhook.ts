@@ -15,11 +15,12 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
  * Processes Stripe webhook events to update user subscription status in the database.
  *
  * Events handled:
- * - checkout.session.completed: User completed payment, upgrade to coach_paid
- * - customer.subscription.updated: Subscription status changed, update role accordingly
- * - customer.subscription.deleted: Subscription cancelled, downgrade to coach_cancelled
- * - invoice.payment_succeeded: Payment successful, ensure coach_paid
- * - invoice.payment_failed: Payment failed, downgrade to coach_past_due
+ * - checkout.session.completed: User completed payment/trial signup, set to trialing or active
+ * - customer.subscription.updated: Subscription status changed, update status accordingly
+ * - customer.subscription.deleted: Subscription cancelled, set to canceled
+ * - customer.subscription.trial_will_end: Trial ending in 3 days (for email reminders)
+ * - invoice.payment_succeeded: Payment successful, ensure active status
+ * - invoice.payment_failed: Payment failed, set to past_due
  *
  * @route POST /api/webhook
  */
@@ -96,11 +97,21 @@ export async function stripeWebhook(
           context.warn(`⚠️ metadata.user_id is not a valid GUID (${userId}), falling back to email lookup`);
         }
 
-        // Update user to coach_paid
+        // Fetch the subscription to check for trial
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+        // Determine if user is trialing or active
+        const isTrialing = subscription.status === 'trialing';
+        const subscriptionStatus = isTrialing ? 'trialing' : 'active';
+        const trialEndDate = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
+
+        // Update user subscription status
         const request = pool.request()
           .input('email', sql.NVarChar, email)
           .input('customerId', sql.NVarChar, customerId)
-          .input('subscriptionId', sql.NVarChar, subscriptionId);
+          .input('subscriptionId', sql.NVarChar, subscriptionId)
+          .input('subscriptionStatus', sql.NVarChar, subscriptionStatus)
+          .input('trialEndDate', sql.DateTime2, trialEndDate);
 
         // Only add userId parameter if it's a valid GUID
         if (isValidGuid) {
@@ -111,7 +122,8 @@ export async function stripeWebhook(
             UPDATE Users
             SET stripeCustomerId = @customerId,
                 stripeSubscriptionId = @subscriptionId,
-                subscriptionStatus = 'active'
+                subscriptionStatus = @subscriptionStatus,
+                subscriptionEndDate = @trialEndDate
             WHERE ${isValidGuid ? 'id = @userId OR' : ''} LOWER(email) = LOWER(@email)
           `);
 
@@ -123,7 +135,11 @@ export async function stripeWebhook(
           };
         }
 
-        context.log(`✅ Subscription activated for user: ${userId || email} (customer: ${customerId}, subscription: ${subscriptionId})`);
+        if (isTrialing) {
+          context.log(`✅ Trial started for user: ${userId || email} (ends: ${trialEndDate?.toISOString()})`);
+        } else {
+          context.log(`✅ Subscription activated for user: ${userId || email} (customer: ${customerId}, subscription: ${subscriptionId})`);
+        }
         break;
       }
 
@@ -233,6 +249,19 @@ export async function stripeWebhook(
         } else {
           context.log(`⚠️ Payment failed for subscription: ${subscriptionId} → status: past_due`);
         }
+        break;
+      }
+
+      case 'customer.subscription.trial_will_end': {
+        const subscription = event.data.object as Stripe.Subscription;
+        context.log(`⏰ Processing customer.subscription.trial_will_end: ${subscription.id}`);
+
+        // This event fires 3 days before trial ends
+        // TODO: Send email reminder to user that trial is ending
+        // For now, just log it
+        const trialEndDate = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
+        context.log(`ℹ️ Trial ending soon for subscription ${subscription.id} (ends: ${trialEndDate?.toISOString()})`);
+
         break;
       }
 

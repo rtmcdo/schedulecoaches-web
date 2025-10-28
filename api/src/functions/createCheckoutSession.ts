@@ -148,6 +148,15 @@ export async function createCheckoutSessionHandler(
                 }
             ],
             mode: 'subscription',
+
+            // 14-day free trial (credit card required)
+            subscription_data: {
+                trial_period_days: 14
+            },
+
+            // Allow promotion codes (for future referral system)
+            allow_promotion_codes: true,
+
             success_url: `${domain}/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${domain}/sign-up`,
             customer_email: user.email,

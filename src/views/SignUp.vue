@@ -52,7 +52,7 @@ const handleAppleSignUp = async () => {
     <div class="max-w-md mx-auto">
       <!-- Header -->
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Start Your Free Trial</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Start Your 14-Day Free Trial</h1>
         <p class="text-lg text-gray-600">Join coaches who are growing their business with Schedule Coaches</p>
       </div>
 

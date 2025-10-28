@@ -53,7 +53,7 @@ const settingsFeatures = [
             to="/sign-up"
             class="inline-block bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            Start Your Free Trial
+            Start Your 14-Day Free Trial
           </RouterLink>
           <a
             href="#features"
@@ -220,14 +220,14 @@ const settingsFeatures = [
         </h2>
         <p class="text-xl text-primary-100 mb-10 max-w-2xl mx-auto">
           Join hundreds of pickleball coaches who trust ScheduleCoaches to manage their business.
-          Start your free trial today—no credit card required.
+          Start your 14-day free trial today—cancel anytime.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <RouterLink
             to="/sign-up"
             class="inline-block bg-white hover:bg-gray-100 text-primary-600 font-bold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            Start Free Trial
+            Start Your 14-Day Free Trial
           </RouterLink>
           <RouterLink
             to="/faq"

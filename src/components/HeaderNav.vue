@@ -154,7 +154,7 @@ const handleSignOut = () => {
             to="/sign-up"
             class="bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md inline-block"
           >
-            Start Free Trial
+            Start 14-Day Trial
           </RouterLink>
         </template>
       </div>
@@ -299,7 +299,7 @@ const handleSignOut = () => {
               @click="closeMobileMenu"
               class="block bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-all shadow-sm text-center w-full"
             >
-              Start Free Trial
+              Start 14-Day Trial
             </RouterLink>
           </li>
         </ul>

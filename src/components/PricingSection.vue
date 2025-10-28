@@ -64,7 +64,7 @@ import { RouterLink } from 'vue-router'
             to="/sign-up"
             class="block w-full bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-bold text-center px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            Start Your Free Trial
+            Start Your 14-Day Free Trial
           </RouterLink>
         </div>
       </div>
